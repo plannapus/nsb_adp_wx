@@ -1,0 +1,150 @@
+751A	v0.1	2017-02-10	nsb_adp.py Program	Projected Ages
+fossil_group	datum_type	datum_name	plot_code	plot_depth	plot_age	proj_age	proj_age_extension
+D	T	LAD N. barronii	tNb	-1.25	1.32	0.458	-0.862
+D	T	LAD T. torokina	tTt	-1.25	1.901	0.458	-1.443
+D	T	LAD T. fasciculatus	tTfa	-2.275	1.69	1.716	0.026
+D	B	FAD A. fasciculatus	bAf	-4.63	1.796	1.849	0.053
+D	T	LAD T. insigna	tTis	-4.63	2.642	1.849	-0.793
+D	B	FAD T. gracilis	bTg	-6.025	2.324	1.927	-0.397
+D	T	LAD T. inura	tTi	-6.025	1.848	1.927	0.079
+D	T	LAD T. vulnifica	tTv	-6.025	2.324	1.927	-0.397
+D	T	LAD Thalassiosira kolbei	tTk	-6.025	1.848	1.927	0.079
+D	B	FAD A. actinochilus	bAa	-6.775	3.216	1.97	-1.246
+D	B	FAD A. hookeri	bAh	-6.775	2.324	1.97	-0.354
+D	B	FAD N. kerguelensis	bNk	-6.775	3.331	1.97	-1.361
+D	T	LAD N. weaveri	tNwe	-6.775	2.803	1.97	-0.833
+D	B	FAD T. vulnifica	bTv	-8.275	3.445	3.472	0.027
+D	T	LAD N. praeinterfrigidaria	tNpi	-8.275	3.79	3.472	-0.318
+D	T	LAD T. complicata	tTco	-8.275	2.986	3.472	0.486
+D	T	LAD T. striata	tTst	-8.275	3.216	3.472	0.256
+D	B	FAD N. weaveri	bNwe	-9.025	3.445	3.509	0.064
+D	B	FAD T. lentiginosa ovalis	bTlo	-9.025	3.445	3.509	0.064
+D	B	FAD T. insigna	bTis	-9.69	3.445	3.541	0.096
+D	T	LAD N. reinholdii	tNr	-12.375	3.445	3.672	0.227
+D	T	LAD R. heteropolara	tRh	-12.375	2.642	3.672	1.03
+D	B	FAD N. curta	bNcu	-14.96	3.732	3.799	0.067
+D	T	LAD N. wisei	tNw	-14.96	3.79	3.799	0.009
+D	B	FAD N. ritscherii	bNri	-15.525	3.79	3.826	0.036
+D	B	FAD Nitzschia interfrigidaria	bNi	-20.025	4.076	4.046	-0.03
+D	B	FAD T. lentiginosa	bTl	-21.915	4.249	4.139	-0.11
+D	T	LAD D. dimorpha	tDd	-21.915	8.867	4.139	-4.728
+D	B	FAD Nitzschia barronii	bNb	-24.14	4.593	4.248	-0.345
+D	T	LAD N. arcula	tNa	-24.14	3.904	4.248	0.344
+D	T	LAD N. aurica	tNau	-24.14	4.134	4.248	0.114
+D	T	LAD N. praecurta	tNpc	-24.14	3.904	4.248	0.344
+D	T	LAD R. costata	tRc	-24.14	4.249	4.248	-0.001
+D	B	FAD T. kolbei	bTk	-26.525	4.363	4.364	0.001
+D	B	FAD T. striata	bTst	-26.525	4.478	4.364	-0.114
+D	B	FAD N. wisei	bNw	-28.775	4.593	4.474	-0.119
+D	B	FAD R. diploneides	bRd	-28.775	4.593	4.474	-0.119
+D	B	FAD T. fasciculatus	bTfa	-29.525	4.593	4.511	-0.082
+D	B	FAD Thalassiosira complicata	bTc	-29.525	4.708	4.511	-0.197
+D	T	LAD T. nitzschioides parva	tTnp	-29.525	4.249	4.511	0.262
+D	B	FAD A. parvulus	bAp	-30.275	4.593	4.547	-0.046
+D	B	FAD Rouxia heteropolara	bRh	-33.775	4.708	4.719	0.011
+D	B	FAD N. lacrima	bNl	-35.275	4.708	4.792	0.084
+D	B	FAD N. praeinterfrigidaria	bNpi	-35.275	4.995	4.792	-0.203
+D	B	FAD T. inura	bTi	-35.275	5.987	4.792	-1.195
+D	B	FAD Thalassiosira oestrupii	bTo	-35.275	5.752	4.792	-0.96
+D	T	LAD Asteromphalus kennettii	tAk	-35.275	6.34	4.792	-1.548
+D	T	LAD A. ingens var. A	tAiA	-36.025	5.87	6.373	0.503
+D	T	LAD A. concavus	tAco	-36.775	6.105	6.426	0.321
+D	T	LAD N. donahuensis	tNdo	-36.775	5.87	6.426	0.556
+D	T	LAD H. karstenii f. 1	tHk1	-38.275	6.34	6.534	0.194
+D	T	LAD H. ovalis	tHo	-38.275	6.34	6.534	0.194
+D	B	FAD Thalassiosira torokina	bTt	-39.025	9.087	6.587	-2.5
+D	B	FAD H. karstenii	bHk	-40.4	9.597	6.686	-2.911
+D	B	FAD H. karstenii f. 1	bHk1	-40.4	8.977	6.686	-2.291
+D	B	FAD H. ovalis	bHo	-40.4	8.096	6.686	-1.41
+D	B	FAD N. reinholdii	bNr	-40.4	6.457	6.686	0.229
+D	B	FAD T. oliverana	bTol	-40.4	6.457	6.686	0.229
+D	B	FAD T. oliverana sparsa	bTos	-40.4	8.647	6.686	-1.961
+D	B	FAD N. donahuensis	bNdo	-50.5	9.597	9.787	0.19
+D	B	FAD Asteromphalus kennettii	bAk	-69.39	10.196	10.274	0.078
+D	T	LAD Nitzschia denticuloides	tNd	-69.39	11.603	10.274	-1.329
+D	T	LAAD Denticulopsis dimorpha	tADd	-76.0	10.571	11.835	1.264
+D	T	LAD Denticulopsis praedimorpha	tDpr	-93.5	11.508	12.155	0.647
+D	B	FAD Denticulopsis dimorpha	bDd	-101.5	12.176	12.302	0.126
+D	T	LAD Actinocyclus ingens v. nodus	tAin	-101.5	12.543	12.302	-0.241
+D	T	LAD D. nicobarica	tDn	-103.0	12.271	12.329	0.058
+D	T	LAD Denticulopsis maccollumii	tDm	-103.0	14.214	12.329	-1.885
+D	B	FAD Denticulopsis praedimorpha	bDpr	-104.5	12.804	13.146	0.342
+D	T	LAD Nitzschia grossepunctata	tNg	-104.5	12.804	13.146	0.342
+D	B	FAD Nitzschia denticuloides	bNd	-109.725	13.498	13.759	0.261
+D	B	FAD D. hyalina	bDhy	-111.0	14.933	14.061	-0.872
+D	B	FAD D. lauta	bDl	-111.0	15.807	14.061	-1.746
+D	B	FAD Denticulopsis hustedtii	bDh	-112.5	14.214	14.13	-0.084
+D	T	LAD C. lewisianus	tCl	-114.0	13.325	14.198	0.873
+D	B	FAD Actinocyclus ingens v. nodus	bAin	-117.0	14.489	14.335	-0.154
+D	B	FAD Crucidenticula nicobarica	bCn	-119.225	17.552	14.437	-3.115
+D	T	LAD R. marylandica	tRma	-123.5	14.032	14.632	0.6
+D	T	LAD S. jouseana	tSj	-123.5	14.671	14.632	-0.039
+D	B	FAD S. barboi	bSb	-125.0	12.717	14.701	1.984
+D	B	FAD Actinocyclus ingens	bAi	-128.725	16.079	14.871	-1.208
+D	B	FAD Nitzschia grossepunctata	bNg	-130.0	15.807	14.929	-0.878
+D	T	LAD Nitzschia maleinterpretaria	tNmal	-137.225	14.123	16.396	2.273
+D	B	FAD Denticulopsis maccollumii	bDm	-138.225	16.967	16.476	-0.491
+D	B	FAD C. kanayae	bCk	-147.725	17.744	17.241	-0.503
+D	T	LAD C. rhombicus	tCr	-147.725	17.84	17.241	-0.599
+D	T	LAD Thalassiosira fraga	tTf	-148.475	18.32	17.895	-0.425
+F	T	TOP Globorotalia miozea	Tmza	-109.11	15.9	13.687	-2.213
+F	T	TOP Globorotalia praescitula	Tpsct	-109.11	11.9	13.687	1.787
+F	B	BT Globorotalia miozea	Bmza	-122.77	16.7	14.599	-2.101
+F	T	TOP Globorotalia zealandica	Tzld	-122.77	17.3	14.599	-2.701
+F	B	BT Globorotalia zealandica	Bzld	-147.36	17.3	17.211	-0.089
+F	T	TOP Globorotalia incognita	Tigt	-147.36	16.4	17.211	0.811
+F	T	TOP Globorotalia semivera	Tsmv	-147.36	17.3	17.211	-0.089
+F	T	TOP Catapsydrax dissimilis	TCds	-154.27	17.3	18.446	1.146
+F	B	BT Globorotalia praescitula	Bpsc	-155.77	18.5	18.589	0.089
+F	B	BT Globorotalia incognita	Bigt	-160.77	21.6	-999.0	-1020.6
+M	T	3A/chron 5	T3AN2	-36.5	6.269	6.407	0.138
+M	B	3A/chron 5	B3AN2	-41.0	6.567	6.728	0.161
+M	T	4A/chron 9	T4AN2	-43.6	9.23	9.356	0.126
+M	B	4A/chron 9	B4AN2	-44.9	9.308	9.438	0.13
+M	T	4A/chron 10	T4AN3	-45.2	9.58	9.65	0.07
+M	B	4A/chron 10	B4AN3	-49.0	9.642	9.748	0.106
+M	T	5/chron 11	T5N1	-50.75	9.74	9.793	0.053
+M	B	C5A	B5AN1	-99.7	12.078	12.269	0.191
+M	T	C5A	T5AN2	-102.0	12.184	12.311	0.127
+M	T	C5AA	T5AAN1	-104.0	12.991	13.088	0.097
+M	B	C5AA	B5AAN1	-105.5	13.139	13.264	0.125
+M	T	C5AB	T5ABN1	-106.0	13.302	13.322	0.02
+M	B	C5AB	B5ABN1	-108.0	13.51	13.557	0.047
+M	T	C5AC	T5ACN1	-109.5	13.703	13.733	0.03
+M	B	C5AC	B5ACN1	-111.8	14.076	14.098	0.022
+M	T	C5AD	T5ADN1	-113.8	14.178	14.189	0.011
+M	B	C5AD	B5ADN1	-123.3	14.612	14.623	0.011
+M	T	C5B	T5BN1	-127.2	14.8	14.801	0.001
+M	B	C5B	B5BN1	-129.2	14.888	14.893	0.005
+M	T	C5C	T5CN1	-132.9	16.014	16.048	0.034
+M	T	C5C	T5CN2	-136.2	16.327	16.314	-0.013
+M	T	C5E	T5EN1	-152.1	18.281	18.24	-0.041
+M	B	C5E	B5EN1	-157.9	18.781	18.791	0.01
+N	T	T Reticulofenestra pseudoumbilicus	T Rps	-57.5	3.75	9.968	6.218
+N	T	T Calcidiscus macintyrei	T Cma	-62.25	1.59	10.09	8.5
+N	T	T Cyclicargolithus floridanus	T  Cfl	-98.5	11.9	12.247	0.347
+R	T	T Antarctissa cylindrica	TAACY	-2.03	0.644	1.702	1.058
+R	B	B Triceraspyris antarctica	BTRAN	-3.005	1.954	1.757	-0.197
+R	T	T Cycladophora pliocenica	TCYPL	-4.565	1.827	1.845	0.018
+R	T	T Eucyrtidium calvertense	TEUCA	-6.43	1.954	1.95	-0.004
+R	T	T Helotholus vema	THEVE	-6.43	2.45	1.95	-0.5
+R	B	B Cycladophora davisiana	BCYDA	-7.93	2.642	3.455	0.813
+R	T	T Desmospyris spongiosa	TDMSP	-7.93	2.472	3.455	0.983
+R	T	T Lampromitra coronata	TLOCO	-12.63	3.79	3.685	-0.105
+R	T	T Prunopyle titan	TPRTI	-18.93	3.583	3.993	0.41
+R	B	B Helotholus vema	BHEVE	-28.43	4.593	4.457	-0.136
+R	L	LCO Lychnocanium grande	LLYGR	-28.43	5.052	4.457	-0.595
+R	T	T Pterocanium chary. trilobum	TPTTR	-28.43	0.845	4.457	3.612
+R	B	B Acrosphaera labrata	BASLA	-42.365	7.765	9.278	1.513
+R	F	FCO Stichocorys peregrina	FSCPE	-42.365	9.297	9.278	-0.019
+R	T	T Cycladophora spongothorax	TCYSP	-43.455	9.197	9.347	0.15
+R	L	LCO Lithomelissa stigi	LLTST	-47.94	9.365	9.721	0.356
+R	F	FCO Lithomelissa stigi	FLTST	-62.94	9.732	10.108	0.376
+R	B	B Eucyrtidium pseudoinflatum	BEUPS	-71.105	10.496	11.745	1.249
+R	T	T Cycladophora humerus	TCYHU	-71.105	10.421	11.745	1.324
+R	T	T Actinomma golownini	TANGO	-74.43	10.646	11.806	1.16
+R	B	B Cycladophora spongothorax	BCYSP	-99.19	12.543	12.26	-0.283
+R	B	B Actinomma golownini	BANGO	-113.95	13.498	14.196	0.698
+R	B	B Cycladophora humerus	BCYHU	-113.95	14.214	14.196	-0.018
+R	B	B Dendrospyris megalocephalis	BDEME	-151.95	12.674	18.226	5.552
+R	B	B Eucyrtidium punctatum	BEUPU	-151.95	17.066	18.226	1.16
