@@ -1864,8 +1864,10 @@ class ADPFrame(wx.Frame):
                     # DEV:  need to go back and make the y[i+1] = y[i] OR y[i] = y[i+1]
                     # DEV:  depends on which point was moved ...
                     # DEV:  for now, make the line BIG to alert the user
-
-                    print 'alert - to make a hiatus adjust point to same depth'
+                    content = self.messageboard.GetRange(0,self.messageboard.GetInsertionPoint()).split('\n')
+                    line_number = len(self.messageboard.GetRange(0,self.messageboard.GetInsertionPoint()).split('\n'))
+                    if 'alert' not in content[line_number-2]:
+                        self.messageboard.WriteText('alert - to make a hiatus adjust point to same depth\n')
                     self.hlinestyle = '-.'
                     self.hlinewidth = 12.
 
