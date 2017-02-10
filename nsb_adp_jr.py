@@ -1442,7 +1442,8 @@ class ADPFrame(wx.Frame):
     def __init__(self, parent, data):
         wx.Frame.__init__(self, None, -1, 'Age-Depth Plot', size=(500, 300))
         self.messageboard = parent.messageboard
-        self.fig = plt.figure(1)
+        #self.fig = plt.figure(1)
+        self.fig = plt.figure()
         self.ax = self.fig.add_subplot(111)
         data['plotGroups'] = get_plot_groups(data['dfDATUMS'],data['plotCodes'])
         #Set axes
@@ -1756,7 +1757,7 @@ class ADPFrame(wx.Frame):
 
         elif (event.key == 'x'): # Exit
             self.messageboard.WriteText('closing plot\n')
-            self.fig.clf()
+            #self.fig.clf()
             self.Quit(event)
 
     def motion_notify_callback(self,event):
@@ -1864,10 +1865,7 @@ class ADPFrame(wx.Frame):
                     # DEV:  need to go back and make the y[i+1] = y[i] OR y[i] = y[i+1]
                     # DEV:  depends on which point was moved ...
                     # DEV:  for now, make the line BIG to alert the user
-                    content = self.messageboard.GetRange(0,self.messageboard.GetInsertionPoint()).split('\n')
-                    line_number = len(self.messageboard.GetRange(0,self.messageboard.GetInsertionPoint()).split('\n'))
-                    if 'alert' not in content[line_number-2]:
-                        self.messageboard.WriteText('alert - to make a hiatus adjust point to same depth\n')
+                    self.messageboard.WriteText('alert - to make a hiatus adjust point to same depth\n')
                     self.hlinestyle = '-.'
                     self.hlinewidth = 12.
 
