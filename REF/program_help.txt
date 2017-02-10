@@ -1,0 +1,21 @@
+Help for Age-Depth Plot Program
+
+Program: nsb_adp.py
+Version: 
+Author:
+Contacts:
+
+Description: A Python 2.7 program for plotting stratigraphic event data
+
+
+This will be the program help file describing the purpose and operation of the program including:
+
+1.  Setup
+2.  Database access
+3.  Files
+
+4.  Running the program
+
+
+
+...........................

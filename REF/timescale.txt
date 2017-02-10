@@ -1,0 +1,419 @@
+Time Scale
+time_scale_name	age_level_name	age_name	age_min_ma	age_max_ma	age_id	parent_age_id
+Berg95	Era	Cenozoic	0.0000	65.0000	501	500
+Berg95	Eon	Phanerozoic	0.0000	543.0000	500	500
+Berg95	Period	Quaternary	0.0000	1.7700	545	501
+Berg95	Epoch	Holocene	0.0000	0.0120	503	545
+Berg95	Subepoch	Pleistocene Upper	0.0120	0.2000	505	504
+Berg95	Epoch	Pleistocene	0.0120	1.7700	504	545
+Berg95	Subepoch	Pleistocene Middle	0.2000	0.7800	506	504
+Berg95	Subepoch	Pleistocene Lower	0.7800	1.7700	507	504
+Berg95	Stage	Calabrian	0.7800	1.7700	508	507
+Berg95	Epoch	Pliocene	1.7700	5.3000	509	501
+Berg95	Period	Tertiary	1.7700	65.0000	546	501
+Berg95	Subepoch	Pliocene Upper	1.7700	3.6000	510	509
+Berg95	Stage	Gelasian	1.7700	2.6000	512	510
+Berg95	Subperiod	Neogene	1.7700	23.8000	502	546
+Berg95	Stage	Piacenzian	2.6000	3.6000	513	510
+Berg95	Subepoch	Pliocene Lower	3.6000	5.3000	511	509
+Berg95	Stage	Zanclean	3.6000	5.3000	514	511
+Berg95	Epoch	Miocene	5.3000	23.8000	515	501
+Berg95	Subepoch	Miocene Upper	5.3000	11.2000	516	515
+Berg95	Stage	Messinian	5.3000	7.1000	519	516
+Berg95	Stage	Tortonian	7.1000	11.2000	520	516
+Berg95	Subepoch	Miocene Middle	11.2000	16.4000	517	515
+Berg95	Stage	Serravallian	11.2000	14.8000	521	517
+Berg95	Stage	Langhian	14.8000	16.4000	522	517
+Berg95	Subepoch	Miocene Lower	16.4000	23.8000	518	515
+Berg95	Stage	Burdigalian	16.4000	20.5000	523	518
+Berg95	Stage	Aquitanian	20.5000	23.8000	524	518
+Berg95	Epoch	Oligocene	23.8000	33.7000	526	525
+Berg95	Subepoch	Oligocene Upper	23.8000	28.5000	527	526
+Berg95	Stage	Chattian	23.8000	28.5000	529	527
+Berg95	Subperiod	Paleogene	23.8000	65.0000	525	546
+Berg95	Subepoch	Oligocene Lower	28.5000	33.7000	528	526
+Berg95	Stage	Rupelian	28.5000	33.7000	530	528
+Berg95	Epoch	Eocene	33.7000	55.0500	531	525
+Berg95	Subepoch	Eocene Upper	33.7000	37.0000	532	531
+Berg95	Stage	Priabonian	33.7000	37.0000	535	532
+Berg95	Subepoch	Eocene Middle	37.0000	49.0000	533	531
+Berg95	Stage	Bartonian	37.0000	41.3000	536	533
+Berg95	Stage	Lutetian	41.3000	49.0000	537	533
+Berg95	Subepoch	Eocene Lower	49.0000	55.0500	534	531
+Berg95	Stage	Ypresian	49.0000	55.0500	538	534
+Berg95	Epoch	Paleocene	55.0500	65.0000	539	525
+Berg95	Subepoch	Paleocene Upper	55.0500	61.0000	540	539
+Berg95	Stage	Thanetian	55.0500	57.9000	542	540
+Berg95	Stage	Selandian	57.9000	61.0000	543	540
+Berg95	Subepoch	Paleocene Lower	61.0000	65.0000	541	539
+Berg95	Stage	Danian	61.0000	65.0000	544	541
+Grad04	Stage	-	-999.9990	542.0000	180	4
+Grad04	Stage	-	-999.9990	513.0000	182	5
+Grad04	Stage	Paibian	-999.9990	501.0000	160	159
+Grad04	Era	Cenozoic	0.0000	65.5000	105	1
+Grad04	Eon	Phanerozoic	0.0000	542.0000	1	1
+Grad04	Period	Neogene	0.0000	23.0300	126	105
+Grad04	Epoch	Holocene	0.0000	0.0120	144	126
+Grad04	Epoch	Pleistocene	0.0120	1.8060	143	126
+Grad04	Subepoch	Pleistocene Upper	0.0120	0.1260	149	143
+Grad04	Subepoch	Pleistocene Middle	0.1260	0.7810	148	143
+Grad04	Subepoch	Pleistocene Lower	0.7810	1.8060	147	143
+Grad04	Epoch	Pliocene	1.8060	5.3320	137	126
+Grad04	Subepoch	Pliocene Upper	1.8060	3.6000	140	137
+Grad04	Stage	Gelasian	1.8060	2.5880	150	140
+Grad04	Stage	Piacenzian	2.5880	3.6000	141	140
+Grad04	Subepoch	Pliocene Lower	3.6000	5.3320	138	137
+Grad04	Stage	Zanclean	3.6000	5.3320	139	138
+Grad04	Epoch	Miocene	5.3320	23.0300	127	126
+Grad04	Stage	Messinian	5.3320	7.2460	136	134
+Grad04	Subepoch	Miocene Upper	5.3330	11.6080	134	127
+Grad04	Stage	Tortonian	7.2460	11.6080	135	134
+Grad04	Subepoch	Miocene Middle	11.6080	15.9700	131	127
+Grad04	Stage	Serravallian	11.6080	13.6500	133	131
+Grad04	Stage	Langhian	13.6500	15.9700	132	131
+Grad04	Subepoch	Miocene Lower	15.9700	23.0300	128	127
+Grad04	Stage	Burdigalian	15.9700	20.4300	130	128
+Grad04	Stage	Aquitanian	20.4300	23.0300	129	128
+Grad04	Period	Paleogene	23.0300	65.5000	106	105
+Grad04	Epoch	Oligocene	23.0300	33.9000	121	106
+Grad04	Subepoch	Oligocene Upper	23.0300	28.4000	124	121
+Grad04	Stage	Chattian	23.0300	28.4000	125	124
+Grad04	Subepoch	Oligocene Lower	28.4000	33.9000	122	121
+Grad04	Stage	Rupelian	28.4000	33.9000	123	122
+Grad04	Epoch	Eocene	33.9000	55.8000	113	106
+Grad04	Subepoch	Eocene Upper	33.9000	37.2000	119	113
+Grad04	Stage	Priabonian	33.9000	37.2000	120	119
+Grad04	Subepoch	Eocene Middle	37.2000	48.6000	116	113
+Grad04	Stage	Bartonian	37.2000	40.4000	118	116
+Grad04	Stage	Lutetian	40.4000	48.6000	117	116
+Grad04	Subepoch	Eocene Lower	48.6000	55.8000	114	113
+Grad04	Stage	Ypresian	48.6000	55.8000	115	114
+Grad04	Epoch	Paleocene	55.8000	65.5000	107	106
+Grad04	Subepoch	Paleocene Upper	55.8000	61.7000	110	107
+Grad04	Stage	Thanetian	55.8000	58.7000	112	110
+Grad04	Stage	Selandian	58.7000	61.7000	111	110
+Grad04	Subepoch	Paleocene Lower	61.7000	65.5000	108	107
+Grad04	Stage	Danian	61.7000	65.5000	109	108
+Grad04	Era	Mesozoic	65.5000	251.0000	60	1
+Grad04	Period	Cretaceous	65.5000	145.5000	89	60
+Grad04	Epoch	Cretaceous Upper	65.5000	99.6000	98	89
+Grad04	Stage	Maastrichtian	65.5000	70.6000	104	98
+Grad04	Stage	Campanian	70.6000	83.5000	103	98
+Grad04	Stage	Santonian	83.5000	85.8000	102	98
+Grad04	Stage	Coniacian	85.8000	89.3000	101	98
+Grad04	Stage	Turonian	89.3000	93.5000	100	98
+Grad04	Stage	Cenomanian	93.5000	99.6000	99	98
+Grad04	Epoch	Cretaceous Lower	99.6000	145.5000	90	89
+Grad04	Stage	Albian	99.6000	112.0000	97	90
+Grad04	Stage	Aptian	112.0000	125.0000	96	90
+Grad04	Stage	Barremian	125.0000	130.0000	95	90
+Grad04	Stage	Hauterivian	130.0000	136.4000	94	90
+Grad04	Stage	Valanginian	136.4000	140.2000	93	90
+Grad04	Stage	Berriasian	140.2000	145.5000	91	90
+Grad04	Period	Jurassic	145.5000	199.6000	72	60
+Grad04	Epoch	Jurassic Upper	145.5000	161.2000	83	72
+Grad04	Stage	Tithonian	145.5000	150.8000	87	83
+Grad04	Stage	Kimmeridgian	150.8000	155.0000	85	83
+Grad04	Stage	Oxfordian	155.0000	161.2000	84	83
+Grad04	Epoch	Jurassic Middle	161.2000	175.6000	78	72
+Grad04	Stage	Callovian	161.2000	164.7000	82	78
+Grad04	Stage	Bathonian	164.7000	167.7000	81	78
+Grad04	Stage	Bajocian	167.7000	171.6000	80	78
+Grad04	Stage	Aalenian	171.6000	175.6000	79	78
+Grad04	Epoch	Jurassic Lower	175.6000	199.6000	73	72
+Grad04	Stage	Toarcian	175.6000	183.0000	77	73
+Grad04	Stage	Pliensbachian	183.0000	189.6000	76	73
+Grad04	Stage	Sinemurian	189.6000	196.5000	75	73
+Grad04	Stage	Hettangian	196.5000	199.6000	74	73
+Grad04	Period	Triassic	199.6000	251.0000	61	60
+Grad04	Epoch	Triassic Upper	199.6000	228.0000	68	61
+Grad04	Stage	Rhaetian	199.6000	203.6000	71	68
+Grad04	Stage	Norian	203.6000	216.5000	70	68
+Grad04	Stage	Carnian	216.5000	228.0000	69	68
+Grad04	Epoch	Triassic Middle	228.0000	245.0000	65	61
+Grad04	Stage	Ladinian	228.0000	237.0000	67	65
+Grad04	Stage	Anisian	237.0000	245.0000	66	65
+Grad04	Epoch	Triassic Lower	245.0000	251.0000	62	61
+Grad04	Stage	Olenekian	245.0000	249.7000	64	62
+Grad04	Stage	Induan	249.7000	251.0000	63	62
+Grad04	Era	Paleozoic	251.0000	542.0000	2	1
+Grad04	Period	Permian	251.0000	299.0000	44	2
+Grad04	Epoch	Lopingian	251.0000	260.4000	57	44
+Grad04	Stage	Changhsingian	251.0000	253.8000	59	57
+Grad04	Stage	Wuchiapingian	253.8000	260.4000	58	57
+Grad04	Epoch	Guadalupian	260.4000	270.6000	52	44
+Grad04	Stage	Capitanian	260.4000	265.8000	55	52
+Grad04	Stage	Wordian	265.8000	268.0000	54	52
+Grad04	Stage	Roadian	268.0000	270.6000	53	52
+Grad04	Epoch	Cisuralian	270.6000	299.0000	46	44
+Grad04	Stage	Kungurian	270.6000	275.6000	50	46
+Grad04	Stage	Artinskian	275.6000	284.4000	49	46
+Grad04	Stage	Sakmarian	284.4000	294.6000	48	46
+Grad04	Stage	Asselian	294.6000	299.0000	47	46
+Grad04	Period	Carboniferous	299.0000	359.2000	32	2
+Grad04	Epoch	Pennsylvanian	299.0000	318.1000	39	32
+Grad04	Subepoch	Pennsylvanian Upper	299.0000	306.5000	192	39
+Grad04	Stage	Gzhelian	299.0000	303.9000	43	192
+Grad04	Stage	Kazimovian	303.9000	306.5000	42	192
+Grad04	Subepoch	Pennsylvanian Middle	306.5000	311.7000	191	39
+Grad04	Stage	Moscovian	306.5000	311.7000	41	191
+Grad04	Subepoch	Pennsylvanian Lower	311.7000	318.1000	190	39
+Grad04	Stage	Bashkirian	311.7000	318.1000	40	190
+Grad04	Epoch	Mississippian	318.1000	359.2000	34	32
+Grad04	Subepoch	Mississippian Upper	318.1000	326.4000	189	34
+Grad04	Stage	Serpukhovian	318.1000	326.4000	37	189
+Grad04	Subepoch	Mississippian Middle	326.4000	345.3000	188	34
+Grad04	Stage	Visean	326.4000	345.3000	36	188
+Grad04	Subepoch	Mississippian Lower	345.3000	359.2000	187	34
+Grad04	Stage	Tournaisian	345.3000	359.2000	35	187
+Grad04	Period	Devonian	359.2000	416.0000	22	2
+Grad04	Epoch	Devonian Upper	359.2000	385.3000	151	22
+Grad04	Stage	Famennian	359.2000	374.5000	31	151
+Grad04	Stage	Frasnian	374.5000	385.3000	30	151
+Grad04	Epoch	Devonian Middle	385.3000	397.5000	27	22
+Grad04	Stage	Givetian	385.3000	391.8000	29	27
+Grad04	Stage	Eifelian	391.8000	397.5000	28	27
+Grad04	Epoch	Devonian Lower	397.5000	416.0000	23	22
+Grad04	Stage	Emsian	397.5000	407.0000	26	23
+Grad04	Stage	Pragian	407.0000	411.2000	25	23
+Grad04	Stage	Lochkovian	411.2000	416.0000	24	23
+Grad04	Period	Silurian	416.0000	443.7000	15	2
+Grad04	Epoch	Pridoli	416.0000	418.7000	21	15
+Grad04	Stage	-	416.0000	418.7000	186	21
+Grad04	Epoch	Ludlow	418.7000	422.9000	20	15
+Grad04	Stage	Ludfordian	418.7000	421.3000	158	20
+Grad04	Stage	Gorstian	421.3000	422.9000	157	20
+Grad04	Epoch	Wenlock	422.9000	428.2000	18	15
+Grad04	Stage	Homerian	422.9000	426.2000	156	18
+Grad04	Stage	Sheinwoodian	426.2000	428.2000	155	18
+Grad04	Epoch	Llandovery	428.2000	443.7000	17	15
+Grad04	Stage	Telychian	428.2000	436.1000	154	17
+Grad04	Stage	Aeronian	436.1000	439.0000	153	17
+Grad04	Stage	Rhuddanian	439.0000	443.7000	152	17
+Grad04	Period	Ordovician	443.7000	488.3000	7	2
+Grad04	Epoch	Ordovician Upper	443.7000	460.9000	14	7
+Grad04	Stage	Hirnantian	443.7000	445.6000	185	14
+Grad04	Stage	-	445.6000	455.8000	146	14
+Grad04	Stage	-	455.8000	460.9000	145	14
+Grad04	Epoch	Ordovician Middle	460.9000	471.8000	11	7
+Grad04	Stage	Darriwilian	460.9000	468.1000	13	11
+Grad04	Stage	-	468.1000	471.8000	12	11
+Grad04	Epoch	Ordovician Lower	471.8000	488.3000	8	7
+Grad04	Stage	-	471.8000	478.6000	10	8
+Grad04	Stage	Tremadocian	478.6000	488.3000	9	8
+Grad04	Period	Cambrian	488.3000	542.0000	3	2
+Grad04	Epoch	Furongian	488.3000	501.0000	159	3
+Grad04	Stage	-	488.3000	-999.9990	184	159
+Grad04	Epoch	Cambrian Middle	501.0000	513.0000	5	3
+Grad04	Stage	-	501.0000	-999.9990	183	5
+Grad04	Epoch	Cambrian Lower	513.0000	542.0000	4	3
+Grad04	Stage	-	513.0000	-999.9990	181	4
+Grad04	Era	Neoproterozoic	542.0000	1000.0000	176	166
+Grad04	Period	Ediacaran	542.0000	600.0000	179	176
+Grad04	Precambrian	Precambrian	542.0000	-999.9990	193	193
+Grad04	Eon	Proterozoic	543.0000	2500.0000	166	193
+Grad04	Period	Cryogenian	600.0000	850.0000	178	176
+Grad04	Period	Tonian	850.0000	1000.0000	177	176
+Grad04	Era	Mesoproterozoic	1000.0000	1600.0000	172	166
+Grad04	Period	Stenian	1000.0000	1200.0000	175	172
+Grad04	Period	Ectasian	1200.0000	1400.0000	174	172
+Grad04	Period	Calymmian	1400.0000	1600.0000	173	172
+Grad04	Era	Paleoproterozoic	1600.0000	2500.0000	167	166
+Grad04	Period	Statherian	1600.0000	1800.0000	171	167
+Grad04	Period	Orosirian	1800.0000	2050.0000	170	167
+Grad04	Period	Rhyacian	2050.0000	2300.0000	169	167
+Grad04	Period	Siderian	2300.0000	2500.0000	168	167
+Grad04	Era	Neoarchean	2500.0000	2800.0000	165	161
+Grad04	Eon	Archean	2500.0000	-999.9990	161	193
+Grad04	Era	Mesoarchean	2800.0000	3200.0000	164	161
+Grad04	Era	Paleoarchean	3200.0000	3600.0000	163	161
+Grad04	Era	Eoarchean	3600.0000	-999.9990	162	161
+Grad12	Era	Cenozoic	0.0000	66.0000	2210	2106
+Grad12	Eon	Phanerozoic	0.0000	542.0000	2106	2106
+Grad12	Epoch	Holocene	0.0000	0.0117	2249	2231
+Grad12	Epoch	Pleistocene	0.0117	2.5880	2248	2231
+Grad12	Subepoch	Pleistocene Upper	0.0117	0.1260	2254	2248
+Grad12	Stage	Tarantian	0.0117	0.1260	2299	2254
+Grad12	Subepoch	Pleistocene Middle	0.1260	0.7810	2253	2248
+Grad12	Stage	Ionian	0.1260	0.7810	2300	2253
+Grad12	Stage	Calabrian	0.7810	1.8060	2301	2248
+Grad12	Stage	Gelasian	1.8060	2.5880	2255	2248
+Grad12	Period	Neogene	2.5880	23.0300	2231	2210
+Grad12	Epoch	Pliocene	2.5880	5.3330	2242	2231
+Grad12	Subepoch	Pliocene Upper	2.5880	3.6000	2245	2242
+Grad12	Stage	Piacenzian	2.5880	3.6000	2246	2245
+Grad12	Subepoch	Pliocene Lower	3.6000	5.3330	2243	2242
+Grad12	Stage	Zanclean	3.6000	5.3330	2244	2243
+Grad12	Epoch	Miocene	5.3330	23.0300	2232	2231
+Grad12	Subepoch	Miocene Upper	5.3330	11.6250	2239	2232
+Grad12	Stage	Messinian	5.3330	7.2460	2241	2239
+Grad12	Stage	Tortonian	7.2460	11.6250	2240	2239
+Grad12	Subepoch	Miocene Middle	11.6250	15.9700	2236	2232
+Grad12	Stage	Serravallian	11.6250	13.8200	2238	2236
+Grad12	Stage	Langhian	13.8200	15.9700	2237	2236
+Grad12	Subepoch	Miocene Lower	15.9700	23.0300	2233	2232
+Grad12	Stage	Burdigalian	15.9700	20.4400	2235	2233
+Grad12	Stage	Aquitanian	20.4400	23.0300	2234	2233
+Grad12	Period	Paleogene	23.0300	66.0000	2211	2210
+Grad12	Epoch	Oligocene	23.0300	33.9000	2226	2211
+Grad12	Subepoch	Oligocene Upper	23.0300	28.1000	2229	2226
+Grad12	Stage	Chattian	23.0300	28.1000	2230	2229
+Grad12	Subepoch	Oligocene Lower	28.1000	33.9000	2227	2226
+Grad12	Stage	Rupelian	28.1000	33.9000	2228	2227
+Grad12	Epoch	Eocene	33.9000	56.0000	2218	2211
+Grad12	Subepoch	Eocene Upper	33.9000	37.8000	2224	2218
+Grad12	Stage	Priabonian	33.9000	37.8000	2225	2224
+Grad12	Subepoch	Eocene Middle	37.8000	47.8000	2221	2218
+Grad12	Stage	Bartonian	37.8000	41.2000	2223	2221
+Grad12	Stage	Lutetian	41.2000	47.8000	2222	2221
+Grad12	Subepoch	Eocene Lower	47.8000	56.0000	2219	2218
+Grad12	Stage	Ypresian	47.8000	56.0000	2220	2219
+Grad12	Epoch	Paleocene	56.0000	66.0000	2212	2211
+Grad12	Subepoch	Paleocene Upper	56.0000	61.6000	2215	2212
+Grad12	Stage	Thanetian	56.0000	59.2000	2217	2215
+Grad12	Stage	Selandian	59.2000	61.6000	2216	2215
+Grad12	Subepoch	Paleocene Lower	61.6000	66.0000	2213	2212
+Grad12	Stage	Danian	61.6000	66.0000	2214	2213
+Grad12	Era	Mesozoic	65.5000	252.5000	2165	2106
+Grad12	Period	Cretaceous	66.0000	145.0000	2194	2165
+Grad12	Epoch	Cretaceous Upper	66.0000	100.5000	2203	2194
+Grad12	Stage	Maastrichtian	66.0000	72.1000	2209	2203
+Grad12	Stage	Campanian	72.1000	83.6000	2208	2203
+Grad12	Stage	Santonian	83.6000	86.3000	2207	2203
+Grad12	Stage	Coniacian	86.3000	89.8000	2206	2203
+Grad12	Stage	Turonian	89.8000	93.9000	2205	2203
+Grad12	Stage	Cenomanian	93.9000	100.5000	2204	2203
+Grad12	Epoch	Cretaceous Lower	100.5000	145.0000	2195	2194
+Grad12	Stage	Albian	100.5000	113.0000	2202	2195
+Grad12	Stage	Aptian	113.0000	126.3000	2201	2195
+Grad12	Stage	Barremian	126.3000	130.8000	2200	2195
+Grad12	Stage	Hauterivian	130.8000	133.9000	2199	2195
+Grad12	Stage	Valanginian	133.9000	139.4000	2198	2195
+Grad12	Stage	Berriasian	139.4000	145.0000	2196	2195
+Grad12	Period	Jurassic	145.0000	201.3000	2177	2165
+Grad12	Epoch	Jurassic Upper	145.0000	163.5000	2188	2177
+Grad12	Stage	Tithonian	145.0000	152.1000	2192	2188
+Grad12	Stage	Kimmeridgian	152.1000	157.3000	2190	2188
+Grad12	Stage	Oxfordian	157.3000	163.5000	2189	2188
+Grad12	Epoch	Jurassic Middle	163.5000	174.1000	2183	2177
+Grad12	Stage	Callovian	163.5000	166.1000	2187	2183
+Grad12	Stage	Bathonian	166.1000	168.3000	2186	2183
+Grad12	Stage	Bajocian	168.3000	170.3000	2185	2183
+Grad12	Stage	Aalenian	170.3000	174.1000	2184	2183
+Grad12	Epoch	Jurassic Lower	174.1000	201.3000	2178	2177
+Grad12	Stage	Toarcian	174.1000	182.7000	2182	2178
+Grad12	Stage	Pliensbachian	182.7000	190.8000	2181	2178
+Grad12	Stage	Sinemurian	190.8000	199.3000	2180	2178
+Grad12	Stage	Hettangian	199.3000	201.3000	2179	2178
+Grad12	Period	Triassic	201.3000	252.5000	2166	2165
+Grad12	Epoch	Triassic Upper	201.3000	237.0000	2173	2166
+Grad12	Stage	Rhaetian	201.3000	209.5000	2176	2173
+Grad12	Stage	Norian	209.5000	228.4000	2175	2173
+Grad12	Stage	Carnian	228.4000	237.0000	2174	2173
+Grad12	Epoch	Triassic Middle	237.0000	247.1000	2170	2166
+Grad12	Stage	Ladinian	237.0000	241.5000	2172	2170
+Grad12	Stage	Anisian	241.5000	247.1000	2171	2170
+Grad12	Epoch	Triassic Lower	247.1000	252.5000	2167	2166
+Grad12	Stage	Olenekian	247.1000	250.0000	2169	2167
+Grad12	Stage	Induan	250.0000	252.5000	2168	2167
+Grad12	Era	Paleozoic	252.5000	541.0000	2107	2106
+Grad12	Period	Permian	252.5000	298.9000	2149	2107
+Grad12	Epoch	Lopingian	252.5000	259.8000	2162	2149
+Grad12	Stage	Changhsingian	252.5000	254.2000	2164	2162
+Grad12	Stage	Wuchiapingian	254.2000	259.8000	2163	2162
+Grad12	Epoch	Guadalupian	259.8000	272.3000	2157	2149
+Grad12	Stage	Capitanian	259.8000	265.1000	2160	2157
+Grad12	Stage	Wordian	265.1000	268.8000	2159	2157
+Grad12	Stage	Roadian	268.8000	272.3000	2158	2157
+Grad12	Epoch	Cisuralian	272.3000	298.9000	2151	2149
+Grad12	Stage	Kungurian	272.3000	279.3000	2155	2151
+Grad12	Stage	Artinskian	279.3000	290.1000	2154	2151
+Grad12	Stage	Sakmarian	290.1000	295.5000	2153	2151
+Grad12	Stage	Asselian	295.5000	298.9000	2152	2151
+Grad12	Period	Carboniferous	298.9000	358.9000	2137	2107
+Grad12	Epoch	Pennsylvanian	298.9000	323.2000	2144	2137
+Grad12	Subepoch	Pennsylvanian Upper	298.9000	307.0000	2297	2144
+Grad12	Stage	Gzhelian	298.9000	303.7000	2148	2297
+Grad12	Stage	Kazimovian	303.7000	307.0000	2147	2297
+Grad12	Subepoch	Pennsylvanian Middle	307.0000	315.2000	2296	2144
+Grad12	Stage	Moscovian	307.0000	315.2000	2146	2296
+Grad12	Subepoch	Pennsylvanian Lower	315.2000	323.2000	2295	2144
+Grad12	Stage	Bashkirian	315.2000	323.2000	2145	2295
+Grad12	Epoch	Mississippian	323.2000	358.9000	2139	2137
+Grad12	Subepoch	Mississippian Upper	323.2000	330.9000	2294	2139
+Grad12	Stage	Serpukhovian	323.2000	330.9000	2142	2294
+Grad12	Subepoch	Mississippian Middle	330.9000	346.7000	2293	2139
+Grad12	Stage	Visean	330.9000	346.7000	2141	2293
+Grad12	Subepoch	Mississippian Lower	346.7000	358.9000	2292	2139
+Grad12	Stage	Tournaisian	346.7000	358.9000	2140	2292
+Grad12	Period	Devonian	358.9000	419.2000	2127	2107
+Grad12	Epoch	Devonian Upper	358.9000	382.7000	2256	2127
+Grad12	Stage	Famennian	358.9000	372.2000	2136	2256
+Grad12	Stage	Frasnian	372.2000	382.7000	2135	2256
+Grad12	Epoch	Devonian Middle	382.7000	393.3000	2132	2127
+Grad12	Stage	Givetian	382.7000	387.7000	2134	2132
+Grad12	Stage	Eifelian	387.7000	393.3000	2133	2132
+Grad12	Epoch	Devonian Lower	393.3000	419.2000	2128	2127
+Grad12	Stage	Emsian	393.3000	407.6000	2131	2128
+Grad12	Stage	Pragian	407.6000	410.8000	2130	2128
+Grad12	Stage	Lochkovian	410.8000	419.2000	2129	2128
+Grad12	Period	Silurian	419.2000	443.8000	2120	2107
+Grad12	Epoch	Pridoli	419.2000	423.0000	2126	2120
+Grad12	Stage	-	419.2000	423.0000	2291	2126
+Grad12	Epoch	Ludlow	423.0000	427.4000	2125	2120
+Grad12	Stage	Ludfordian	423.0000	425.6000	2263	2125
+Grad12	Stage	Gorstian	425.6000	427.4000	2262	2125
+Grad12	Epoch	Wenlock	427.4000	433.4000	2123	2120
+Grad12	Stage	Homerian	427.4000	430.5000	2261	2123
+Grad12	Stage	Sheinwoodian	430.5000	433.4000	2260	2123
+Grad12	Epoch	Llandovery	433.4000	443.8000	2122	2120
+Grad12	Stage	Telychian	433.4000	438.5000	2259	2122
+Grad12	Stage	Aeronian	438.5000	440.8000	2258	2122
+Grad12	Stage	Rhuddanian	440.8000	443.8000	2257	2122
+Grad12	Period	Ordovician	443.8000	485.4000	2112	2107
+Grad12	Epoch	Ordovician Upper	443.8000	458.4000	2119	2112
+Grad12	Stage	Hirnantian	443.8000	445.2000	2290	2119
+Grad12	Stage	Katian	445.2000	453.0000	2251	2119
+Grad12	Stage	Sandbian	453.0000	458.4000	2250	2119
+Grad12	Epoch	Ordovician Middle	458.4000	470.4000	2116	2112
+Grad12	Stage	Darriwilian	458.4000	467.3000	2118	2116
+Grad12	Stage	Dapingian	467.3000	470.4000	2117	2116
+Grad12	Epoch	Ordovician Lower	470.4000	485.4000	2113	2112
+Grad12	Stage	Floian	470.4000	477.7000	2115	2113
+Grad12	Stage	Tremadocian	477.7000	485.4000	2114	2113
+Grad12	Period	Cambrian	485.4000	541.0000	2108	2107
+Grad12	Epoch	Furongian	485.4000	497.0000	2264	2108
+Grad12	Stage	Stage 10	485.4000	489.5000	2289	2264
+Grad12	Stage	Jiangshanian	489.5000	494.0000	2302	2264
+Grad12	Stage	Paibian	494.0000	497.0000	2265	2264
+Grad12	Epoch	Series 3	497.0000	509.0000	2110	2108
+Grad12	Stage	Guzhangian	497.0000	500.5000	2288	2110
+Grad12	Stage	Drumian	500.5000	504.5000	2285	2110
+Grad12	Stage	Stage 5	504.5000	509.0000	2303	2110
+Grad12	Epoch	Series 2	509.0000	521.0000	2109	2108
+Grad12	Stage	Stage 4	509.0000	514.0000	2286	2109
+Grad12	Stage	Stage 3	514.0000	521.0000	2287	2109
+Grad12	Epoch	Terreneuvian	521.0000	541.0000	2304	2108
+Grad12	Stage	Stage 2	521.0000	529.0000	2305	2307
+Grad12	Stage	Fortunian	529.0000	541.0000	2306	2307
+Grad12	Era	Neoproterozoic	541.0000	1000.0000	2281	2271
+Grad12	Period	Ediacaran	541.0000	635.0000	2284	2281
+Grad12	Eon	Proterozoic	541.0000	2500.0000	2271	2298
+Grad12	Precambrian	Precambrian	541.0000	4600.0000	2298	2298
+Grad12	Period	Cryogenian	600.0000	850.0000	2283	2281
+Grad12	Period	Tonian	850.0000	1000.0000	2282	2281
+Grad12	Era	Mesoproterozoic	1000.0000	1600.0000	2277	2271
+Grad12	Period	Stenian	1000.0000	1200.0000	2280	2277
+Grad12	Period	Ectasian	1200.0000	1400.0000	2279	2277
+Grad12	Period	Calymmian	1400.0000	1600.0000	2278	2277
+Grad12	Era	Paleoproterozoic	1600.0000	2500.0000	2272	2271
+Grad12	Period	Statherian	1600.0000	1800.0000	2276	2272
+Grad12	Period	Orosirian	1800.0000	2050.0000	2275	2272
+Grad12	Period	Rhyacian	2050.0000	2300.0000	2274	2272
+Grad12	Period	Siderian	2300.0000	2500.0000	2273	2272
+Grad12	Era	Neoarchean	2500.0000	2800.0000	2270	2266
+Grad12	Eon	Archean	2500.0000	4000.0000	2266	2298
+Grad12	Era	Mesoarchean	2800.0000	3200.0000	2269	2266
+Grad12	Era	Paleoarchean	3200.0000	3600.0000	2268	2266
+Grad12	Era	Eoarchean	3600.0000	4000.0000	2267	2266
+Grad12	Eon	Hadean	4000.0000	4600.0000	2307	2284

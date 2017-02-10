@@ -1,0 +1,35 @@
+
+About for Age-Depth Plot Program
+
+Program: nsb_adp.py
+Version: x.x
+Author:  Patrick Diver(1), David Lazarus(2), Johan Renaudie(3), Geoff Bohling(4)
+Contacts:  Lazarus, Renaudie, Diver
+
+Description: A Python 2.7 interactive program for plotting microfossil stratigraphic event data 
+             and constructing a line of correlation (LOC) used for creating age depth models of  
+             deep sea cores.
+
+This program is a Python implementation combining the features of the original "Age Depth Plot (ADP)"
+program by Lazarus written in True Basic (1992), and the CHRONOS Java version by Bohling (2005).
+
+
+1.  Patrick Diver
+     DivDat Consulting
+     Wesley, Arkansas, USA
+     pldiver@gmail.com
+
+2.  David Lazarus
+     Museum fur Naturkunde
+     Berlin, Germany
+     david.lazarus@mfn-berlin.de
+
+3.  Johan Renaudie
+     Museum fur Naturkunde
+     Berlin, Germany
+     johan.renaudie@mfn-berlin.de
+
+4.  Geoff Bohling
+     Kansas Geological Survey
+     Lawrence, Kansas, USA
+     geoff@kgs.ku.edu
