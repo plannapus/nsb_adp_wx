@@ -18,8 +18,8 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as FigureCanvas
 from matplotlib.backends.backend_wx import NavigationToolbar2Wx
 from matplotlib.figure import Figure
-#from pylab import *
 
+# QUERY_ functions
 def query_loc(engine,holeID): #Work
     """Query LOC from database."""
     # Query statement
@@ -155,6 +155,7 @@ def query_paleomag_interval(engine,holeID): #Work
     dfPMAGS = psql.read_sql_query(sqlPMAG,engine)
     return dfPMAGS
 
+# FIX_ functions:
 def fix_null(t,fixType):
     """Fix missing values for depths."""
     if (pd.isnull(t)):
@@ -173,6 +174,7 @@ def fix_cores(dfCORES):
         dfCORES['bottom_depth'][i] = dfCORES['bottom_depth'][i] * -1.
     return dfCORES
 
+# CALC_ functions:
 def calc_core_depth(origCore,dfCORES):
     """Calculate mbsf depth for cores (core-section,int)."""
     ccFlag = 0
@@ -201,6 +203,139 @@ def calc_core_depth(origCore,dfCORES):
     depth = topDepth + (int(section)-1) * 1.5 + .01 * float(interval)
     return depth
 
+def calc_depth_ma(depth,x,y):
+    """Calculate age from depth along LOC"""
+    # DEV: what about event at hiatus depth?
+    if (depth < abs(y[0]) or depth > abs(y[len(y)-1])): # Outside of LOC range
+        return -999.
+    i = 0
+    while (depth >= abs(y[i])):
+        i += 1
+    ma = x[i-1]
+    ratio = (depth - abs(y[i-1])) / (abs(y[i]) - abs(y[i-1]))
+    if (ratio > 0):
+        ma += ratio * (abs(x[i]) - abs(x[i-1]))
+
+    return ma
+
+def age_convert(age, fromScale, toScale):
+    """
+       Convert an age from one timescale to another.
+       Based on Johan Renaudie code in AgeScaleTransform.py .
+    """
+    conv = []
+    for i in [k['event_id'] for k in fromScale]:
+        if i in [k['event_id'] for k in toScale]:
+            conv.append({'event_id':i,
+          'fromScale': [k['age_ma'] for k in fromScale if k['event_id']==i][0],
+          'toScale':[k['age_ma'] for k in toScale if k['event_id']==i][0]})
+
+    conv = sorted(conv,key=lambda x:float(x['fromScale']))
+    old = map(float,[k['fromScale'] for k in conv])
+    new = map(float,[k['toScale'] for k in conv])
+
+    m = bisect_left(old, age)
+
+    if (m == 0):
+        n = new[0]
+    elif (m == len(fromScale)):
+        n = new[-1]
+    else:
+        n = new[m-1] + (age - old[m-1])*(new[m]-new[m-1])/(old[m]-old[m-1])
+    age = n
+
+    return(age)
+
+def get_minmax_ages_datum(dfDATUMS):
+    """Get min/max for ages (x axis) from the datums dataframe
+        as a list.
+    """
+    ages = []
+    ages.append(min(dfDATUMS['datum_age_max_ma'].tolist()))
+    ages.append(max(dfDATUMS['datum_age_max_ma'].tolist()))
+    ages.append(min(dfDATUMS['datum_age_min_ma'].tolist()))
+    ages.append(max(dfDATUMS['datum_age_min_ma'].tolist()))
+
+    return ages
+
+def get_minmax_depths_datum(dfDATUMS):
+    """Get min/max for depths (y axis) from the datums dataframe
+        as a list.
+    """
+    depths = []
+    depths.append(min(dfDATUMS['top_depth'].tolist()))
+    depths.append(max(dfDATUMS['top_depth'].tolist()))
+    depths.append(min(dfDATUMS['bottom_depth'].tolist()))
+    depths.append(max(dfDATUMS['bottom_depth'].tolist()))
+
+    return depths
+
+def get_minmax_ages_loc(dfLOC,ages):
+    """Get min/max ages from LOC and append to ages list."""
+    ages.append(min(dfLOC['age_ma'].tolist()))
+    ages.append(max(dfLOC['age_ma'].tolist()))
+    return ages
+
+def get_minmax_depths_loc(dfLOC,depths):
+    """Get min/max depths from LOC and append to depths list."""
+    depths.append(min(dfLOC['depth_mbsf'].tolist()))
+    depths.append(max(dfLOC['depth_mbsf'].tolist()))
+
+    return depths
+
+def get_minmax_depths_cores(dfCORES,depths):
+    """Get min/max depths from cores and append to depths list."""
+    depths.append(min(dfCORES['top_depth'].tolist()))
+    depths.append(max(dfCORES['top_depth'].tolist()))
+    depths.append(min(dfCORES['bottom_depth'].tolist()))
+    depths.append(max(dfCORES['bottom_depth'].tolist()))
+
+    return depths
+
+def get_minmax_axes(ages,depths):
+    """Extract min/max for age(x) and depth(y) from lists."""
+    xMinAge = min(ages)
+    xMaxAge = max(ages)
+    yMinDepth = min(depths)
+    yMaxDepth = max(depths)
+
+    xMin = math.floor((min(ages)/10.))*10
+    xMax = math.ceil((max(ages)/10.))*10
+    yMin = math.floor((min(depths)/10.))*10
+    yMax = math.ceil((max(depths)/10.))*10
+
+    # Check if user supplied axes arguments
+    # and replace values for min/max axes
+    # First initialize pxMin,pxMax
+    pxMin = -999.
+    pxMax = 999.
+
+    if (len(sys.argv) > 8):
+        pxMin = sys.argv[8]
+        pxMax = sys.argv[9]
+        pyMin = sys.argv[10]
+        pyMax = sys.argv[11]
+
+        xMin = float(pxMin)
+        xMax = float(pxMax)
+        # Now flip the y axes to negative
+        yMax = float(pyMin) * -1.
+        yMin = float(pyMax) * -1.
+
+    # Check for too much padding on the x-axis
+    if (xMax-xMaxAge > 5. and xMax != float(pxMax)):
+        xMax = xMax - 5.
+
+    # Place values into list and return
+    axes = []
+    axes.append(xMin)
+    axes.append(xMax)
+    axes.append(yMin)
+    axes.append(yMax)
+
+    return axes
+
+# PLOT_ functions:
 def get_plot_groups(dfDATUMS,plotCodes):
     """Get unique plot groups (fossilGroup and datumType) from datums dataframe
        and setup as list with [group,plot,label,highlight].
@@ -650,34 +785,6 @@ def plot_title(holeID):
     title = 'Age Depth Plot for ' + holeID
     plt.title(title)
 
-def age_convert(age, fromScale, toScale):
-    """
-       Convert an age from one timescale to another.
-       Based on Johan Renaudie code in AgeScaleTransform.py .
-    """
-    conv = []
-    for i in [k['event_id'] for k in fromScale]:
-        if i in [k['event_id'] for k in toScale]:
-            conv.append({'event_id':i,
-          'fromScale': [k['age_ma'] for k in fromScale if k['event_id']==i][0],
-          'toScale':[k['age_ma'] for k in toScale if k['event_id']==i][0]})
-
-    conv = sorted(conv,key=lambda x:float(x['fromScale']))
-    old = map(float,[k['fromScale'] for k in conv])
-    new = map(float,[k['toScale'] for k in conv])
-
-    m = bisect_left(old, age)
-
-    if (m == 0):
-        n = new[0]
-    elif (m == len(fromScale)):
-        n = new[-1]
-    else:
-        n = new[m-1] + (age - old[m-1])*(new[m]-new[m-1])/(old[m]-old[m-1])
-    age = n
-
-    return(age)
-
 def set_labels(labels):
     """Set axes values for plot."""
     new_labels = LabelDialog(labels)
@@ -689,94 +796,127 @@ def set_labels(labels):
     else:
         return labels
 
-def get_minmax_ages_datum(dfDATUMS):
-    """Get min/max for ages (x axis) from the datums dataframe
-        as a list.
+class AnnoteFinder: #Pat's code, largely untouched
     """
-    ages = []
-    ages.append(min(dfDATUMS['datum_age_max_ma'].tolist()))
-    ages.append(max(dfDATUMS['datum_age_max_ma'].tolist()))
-    ages.append(min(dfDATUMS['datum_age_min_ma'].tolist()))
-    ages.append(max(dfDATUMS['datum_age_min_ma'].tolist()))
+    Callback for matplotlib to display an annotation when points are clicked on.
+    The point which is closest to the click and within xtol and ytol is
+     identified.
 
-    return ages
+    Register this function like this:
 
-def get_minmax_depths_datum(dfDATUMS):
-    """Get min/max for depths (y axis) from the datums dataframe
-        as a list.
+    scatter(xdata, ydata)
+    af = AnnoteFinder(xdata, ydata, annotes)
+    connect('button_press_event', af)
     """
-    depths = []
-    depths.append(min(dfDATUMS['top_depth'].tolist()))
-    depths.append(max(dfDATUMS['top_depth'].tolist()))
-    depths.append(min(dfDATUMS['bottom_depth'].tolist()))
-    depths.append(max(dfDATUMS['bottom_depth'].tolist()))
+    # DEV: class AnnoteFinder:   code copied, modified from jkitchin
+    # DEV: see jkitchin on GitHub
+    # DEV: John Kitchin, Carnegie Mellon University (jkitchin@andrew.cmu.edu)
+    # DEV: code from annotate_picks.py and mmapsrep.py
 
-    return depths
+    def __init__(self,xdata,ydata,annotes,axis=None,xtol=None,ytol=None):
+        self.data = zip(xdata,ydata,annotes)
+        if xtol is None:
+            #xtol = ((max(xdata) - min(xdata))/float(len(xdata)))/2
+            xtol = ((max(xdata) - min(xdata))/float(len(xdata)))/4
+            if ytol is None:
+                #ytol = ((max(ydata) - min(ydata))/float(len(ydata)))/2
+                ytol = ((max(ydata) - min(ydata))/float(len(ydata)))/4
 
-def get_minmax_ages_loc(dfLOC,ages):
-    """Get min/max ages from LOC and append to ages list."""
-    ages.append(min(dfLOC['age_ma'].tolist()))
-    ages.append(max(dfLOC['age_ma'].tolist()))
-    return ages
+        self.xtol = xtol
+        self.ytol = ytol
+        if axis is None:
+            self.axis = plt.gca()
+        else:
+            self.axis= axis
+        self.drawnAnnotations = {}
+        self.links = []
 
-def get_minmax_depths_loc(dfLOC,depths):
-    """Get min/max depths from LOC and append to depths list."""
-    depths.append(min(dfLOC['depth_mbsf'].tolist()))
-    depths.append(max(dfLOC['depth_mbsf'].tolist()))
+    def distance(self,x1,x2,y1,y2):
+        """
+        return the distance between two points
+        """
+        return math.hypot(x1 - x2, y1 - y2)
 
-    return depths
+    def __call__(self,event):
+        if event.inaxes:
+          clickX = event.xdata
+          clickY = event.ydata
+          if self.axis is None or self.axis==event.inaxes:
+            annotes = []
+            for x,y,a in self.data:
+                if (clickX-self.xtol < x < clickX+self.xtol and
+                  clickY-self.ytol < y < clickY+self.ytol):
+                    # DEV:  added button check
+                    if (event.button == 1 or event.button == 2):
+                        a = a[0]+":"+a[2]  # For plot_code, plot_color
+                        btn = event.button
+                    else:
+                        a = a[0]+":"+a[1]+":"+a[2] # For plot_code, datum_name, color
+                        btn = 3
+                    annotes.append((self.distance(x,clickX,y,clickY),x,y,a))
 
-def get_minmax_depths_cores(dfCORES,depths):
-    """Get min/max depths from cores and append to depths list."""
-    depths.append(min(dfCORES['top_depth'].tolist()))
-    depths.append(max(dfCORES['top_depth'].tolist()))
-    depths.append(min(dfCORES['bottom_depth'].tolist()))
-    depths.append(max(dfCORES['bottom_depth'].tolist()))
+            if annotes:
+                #annotes.sort()
+                #annote = annotes[0]
+                #distance, x, y, annote = annote
+                # DEV: modification:  report all at x,y
+                for i in range(0,len(annotes)):
+                    distance, x, y, annote = annotes[i]
+                    #self.drawAnnote(event.inaxes,x,y,annote) # Modification
+                    self.drawAnnote(event.inaxes,x,y,annote,clickX,clickY,i,btn)
+                    for j in self.links:
+                        j.drawSpecificAnnote(annote)
 
-    return depths
+    # Modification: added clickX,clickY,idx
+    def drawAnnote(self,axis,x,y,annote,clickX,clickY,idx,btn):
+        """
+        Draw the annotation on the plot
+        """
+        if self.drawnAnnotations.has_key((x,y)): # Modification
+            markers = self.drawnAnnotations[(x,y)]
+            for m in markers:
+                m.set_visible(not m.get_visible())
+            self.axis.figure.canvas.draw()
+            del self.drawnAnnotations[(x,y)] # Modification
+        else:
+            color  = annote[annote.rfind(':',0)+1:]
+            annote = annote[0:annote.rfind(':',0)]
+            #t = axis.text(x+.10,y,"%s (%6.3f, %8.3f)"%(annote,x,y),size=7.,color=color)
+            if (clickX <= x): # DEV: figure quadrant to post text
+                xpos = x - .10
+                ha = 'right'
+            else:
+                xpos = x + .10
+                ha = 'left'
+            if (clickY <= y):
+                ypos = y - .10
+                if (idx == 0):
+                    va = 'top'
+                else:
+                    va = 'bottom'
+            else:
+                ypos = y + .10
+                if (idx == 0):
+                    va = 'bottom'
+                else:
+                    va = 'top'
+            if (btn == 1):
+                t = axis.text(xpos,ypos,"%s"%(annote),size=7.,color=color,horizontalalignment=ha,verticalalignment=va)
+            else:
+                t = axis.text(xpos,ypos,"%s (%6.3f, %8.3f)"%(annote,x,y),size=7.,color=color,horizontalalignment=ha,verticalalignment=va)
+            #m = axis.scatter([x],[y],marker='o',s=128,alpha=0.4,c='yellow') # DEV: highlight with yellow circle
+            m = axis.scatter([x],[y],marker='.',s=0,c='k',zorder=100) # DEV: modified, s=0 to show text only
+            self.drawnAnnotations[(x,y)]=(t,m)
+            self.axis.figure.canvas.draw()
 
-def get_minmax_axes(ages,depths):
-    """Extract min/max for age(x) and depth(y) from lists."""
-    xMinAge = min(ages)
-    xMaxAge = max(ages)
-    yMinDepth = min(depths)
-    yMaxDepth = max(depths)
+        # DEV: can use this code with modification to toggle on/off all annotations
+        # DEV: modify code for event with key_pressed 't' or 'a' ....
+        # DEV: see annotation_picks_ALL.py that shows modifications (don't check for distance/xtol/ytol)
 
-    xMin = math.floor((min(ages)/10.))*10
-    xMax = math.ceil((max(ages)/10.))*10
-    yMin = math.floor((min(depths)/10.))*10
-    yMax = math.ceil((max(depths)/10.))*10
-
-    # Check if user supplied axes arguments
-    # and replace values for min/max axes
-    # First initialize pxMin,pxMax
-    pxMin = -999.
-    pxMax = 999.
-
-    if (len(sys.argv) > 8):
-        pxMin = sys.argv[8]
-        pxMax = sys.argv[9]
-        pyMin = sys.argv[10]
-        pyMax = sys.argv[11]
-
-        xMin = float(pxMin)
-        xMax = float(pxMax)
-        # Now flip the y axes to negative
-        yMax = float(pyMin) * -1.
-        yMin = float(pyMax) * -1.
-
-    # Check for too much padding on the x-axis
-    if (xMax-xMaxAge > 5. and xMax != float(pxMax)):
-        xMax = xMax - 5.
-
-    # Place values into list and return
-    axes = []
-    axes.append(xMin)
-    axes.append(xMax)
-    axes.append(yMin)
-    axes.append(yMax)
-
-    return axes
+    def drawSpecificAnnote(self,annote):
+        annotesToDraw = [(x,y,a) for x,y,a in self.data if a==annote]
+        for x,y,a in annotesToDraw:
+            self.drawAnnote(self.axis,x,y,a)
 
 # Pat functions adapted to wx by JR:
 # READ_ functions:
@@ -986,7 +1126,7 @@ def set_axes(axes):
         return axes
 
 #SAVE_ functions:
-def save_loc(parent,holeID, x, y): #Rewritten
+def save_loc(parent, holeID, x, y): #Rewritten
     """Write the current LOC to a file."""
     file = holeID + "_loc.txt"
     default = os.environ['NSBPATH'] + "/LOC/"
@@ -1004,7 +1144,7 @@ def save_loc(parent,holeID, x, y): #Rewritten
         fo.close()
         parent.messageboard.WriteText('saving LOC to %s\n' % (fileName,))
 
-def save_plot(parent,holeID, fig): #Rewritten, could potentially be used in a menu item
+def save_plot(parent, holeID, fig): #Rewritten
     """Save plot figure to a file."""
     stamp = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
     path = os.environ['NSBPATH'] + "/PLOTS/"
@@ -1027,25 +1167,15 @@ def project_events(parent, dfDATUMS,x,y):
         # Extract a subset of column data in a new order for reporting
         dfLIST = dfDATUMS[['plot_fossil_group', 'datum_type', 'datum_name',
                            'plot_code', 'plot_depth', 'plot_age']]
-
         # Sort by fossil group, depth, name
         dfLIST = dfLIST.sort(['plot_fossil_group', 'plot_depth', 'datum_name'],
                               ascending=[True,False,True])
-
         # Re-index the new sorted dataframe
         newIndex=range(0,len(dfLIST))
         dfLIST['newIndex'] = newIndex
         dfLIST = dfLIST.set_index('newIndex')
-
-        # Fixed reload sys; sys.setdefaultencoding("utf-8")
-        # Encode datum_name to UTF-8 or else may bomb on writing
-        # Encode datum_name to UTF-8 or else may bomb on writing
-        #for i in range(0,len(dfLIST)):
-            #dfLIST['datum_name'][i] = dfLIST['datum_name'][i].encode('utf-8')
-
         fo = open(fileName,"w")
         date = datetime.date.today().isoformat()
-
         header = []
         header.append(parent.holeID)
         header.append('v0.1')
@@ -1053,7 +1183,6 @@ def project_events(parent, dfDATUMS,x,y):
         header.append('nsb_adp.py Program')
         header.append('Projected Ages')
         fo.write("\t".join(map(str,header))+"\n")
-
         colHdr = []
         colHdr.append('fossil_group')
         colHdr.append('datum_type')
@@ -1069,7 +1198,6 @@ def project_events(parent, dfDATUMS,x,y):
             # DEV: Check for hiatus?
             proj_age = calc_depth_ma(abs(dfLIST['plot_depth'][i]), x, y)
             proj_age_extension = proj_age - dfLIST['plot_age'][i]
-
             row = []
             row.append(dfLIST['plot_fossil_group'][i])
             row.append(dfLIST['datum_type'][i])
@@ -1082,21 +1210,6 @@ def project_events(parent, dfDATUMS,x,y):
             fo.write("\t".join(map(str,row))+"\n")
 
         fo.close()
-
-def calc_depth_ma(depth,x,y):
-    """Calculate age from depth along LOC"""
-    # DEV: what about event at hiatus depth?
-    if (depth < abs(y[0]) or depth > abs(y[len(y)-1])): # Outside of LOC range
-        return -999.
-    i = 0
-    while (depth >= abs(y[i])):
-        i += 1
-    ma = x[i-1]
-    ratio = (depth - abs(y[i-1])) / (abs(y[i]) - abs(y[i-1]))
-    if (ratio > 0):
-        ma += ratio * (abs(x[i]) - abs(x[i-1]))
-
-    return ma
 
 # New GUI (JR) below:
 # Wrappers:
@@ -1303,7 +1416,7 @@ class ParamDialog(wx.Dialog): # Dialog to choose parameters
         self.SetSizerAndFit(flex)
         self.Layout()
 
-class AxisDialog(wx.Dialog):
+class AxisDialog(wx.Dialog): # Dialog to set the axes
     def __init__(self,axes):
         wx.Dialog.__init__(self, None, -1, 'Enter New Axis', size=(400,180))
         flex = wx.FlexGridSizer(9,2,5,5)
@@ -1330,7 +1443,7 @@ class AxisDialog(wx.Dialog):
         self.SetSizerAndFit(flex)
         self.Layout()
 
-class LabelDialog(wx.Dialog):
+class LabelDialog(wx.Dialog): # Dialog to set the labels
     def __init__(self,labels):
         wx.Dialog.__init__(self, None, -1, 'Enter New Labels', size=(400,180))
         flex = wx.FlexGridSizer(9,2,5,5)
@@ -1352,7 +1465,6 @@ class LabelDialog(wx.Dialog):
         flex.AddGrowableCol(1)
         self.SetSizerAndFit(flex)
         self.Layout()
-
 
 # Help/Info frames:
 class AboutFrame(wx.Frame):
@@ -1428,8 +1540,8 @@ class LOCFrame(wx.Frame):
         sizer = wx.BoxSizer(wx.VERTICAL)
         sizer.Add(self.list_ctrl, 0, wx.ALL|wx.EXPAND, 5)
         for i in xrange(len(x)):
-            self.list_ctrl.InsertStringItem(self.index, str(x[i]))
-            self.list_ctrl.SetStringItem(self.index, 1, str(y[i]))
+            self.list_ctrl.InsertStringItem(self.index, '%.3f' % (x[i],))
+            self.list_ctrl.SetStringItem(self.index, 1, '%.2f' % (y[i],))
             self.index += 1
         self.SetSizer(sizer)
         self.Show(True)
@@ -1438,12 +1550,50 @@ class ADPFrame(wx.Frame):
     def __init__(self, parent, data):
         wx.Frame.__init__(self, None, -1, 'Age-Depth Plot', size=(500, 300))
         self.messageboard = parent.messageboard
-        #self.fig = plt.figure(1)
-        self.fig = plt.figure()
-        self.ax = self.fig.add_subplot(111)
         data['plotGroups'] = get_plot_groups(data['dfDATUMS'],data['plotCodes'])
-        #Set axes
+        # Setup axes
         axes = self.process_axes(data)
+        # Plot
+        self.fig = plt.figure()
+        self.messageboard.WriteText('plotting...\n')
+        self.canvas = FigureCanvas(self, -1, self.fig)
+        self.plot(data, axes)
+        # Setup callbacks
+        self.canvas.mpl_connect('draw_event', self.draw_callback)
+        self.canvas.mpl_connect('button_press_event', self.button_press_callback)
+        self.canvas.mpl_connect('button_release_event', self.button_release_callback)
+        self.canvas.mpl_connect('motion_notify_event', self.motion_notify_callback)
+        self.canvas.mpl_connect('key_press_event', self.key_press_callback)
+        # Setup Status bar, toolbar and sizers
+        self.statusBar = wx.StatusBar(self, -1)
+        self.SetStatusBar(self.statusBar)
+        self.sizer = wx.BoxSizer(wx.VERTICAL)
+        self.sizer.Add(self.canvas, 1, wx.LEFT | wx.TOP | wx.EXPAND)
+        self.SetSizer(self.sizer)
+        self.Fit()
+        self.toolbar = NavigationToolbar2Wx(self.canvas)
+        self.toolbar.Realize()
+        self.sizer.Add(self.toolbar, 0, wx.LEFT | wx.EXPAND)
+        self.toolbar.update()
+        # Setup menubar
+        self.menubar = ADP_Menubar(self)
+        Save = wx.Menu()
+        Save1 = Save.Append(wx.ID_ANY, 'Save Plot')
+        Save2 = Save.Append(wx.ID_ANY, 'Save LOC')
+        Save3 = Save.Append(wx.ID_ANY, 'Inspect LOC')
+        Save4 = Save.Append(wx.ID_ANY, 'Inspect Stratigraphic data')
+        Save5 = Save.Append(wx.ID_ANY, 'Project events on LOC')
+        self.menubar.Append(Save, 'Plot')
+        self.Bind(wx.EVT_MENU, lambda event: save_plot(self, self.holeID, self.fig), Save1)
+        self.Bind(wx.EVT_MENU, lambda event: save_loc(self, self.holeID, self.line), Save2)
+        self.Bind(wx.EVT_MENU, lambda event: self.inspect_loc(self.line.get_data()[0], self.line.get_data()[1]), Save3)
+        self.Bind(wx.EVT_MENU, lambda event: self.list_events(data), Save4)
+        self.Bind(wx.EVT_MENU, lambda event: project_events(self,data['dfDATUMS'],self.line.get_data()[0], self.line.get_data()[1]), Save5)
+        self.SetMenuBar(self.menubar)
+        self.Show(True)
+
+    def plot(self,data,axes):
+        self.ax = self.fig.add_subplot(111)
         self.xMin = max(axes[0],0)
         self.xMax = axes[1]
         self.yMin = axes[2]
@@ -1451,8 +1601,6 @@ class ADPFrame(wx.Frame):
         self.ax.set_xlim([self.xMin,self.xMax])
         self.ax.set_ylim([self.yMin - (abs(self.yMax - self.yMin) * 0.05), self.yMax + (abs(self.yMax - self.yMin) * .05)])
         #Plotting
-        self.messageboard.WriteText('plotting...\n')
-        self.canvas = FigureCanvas(self, -1, self.fig)
         if len(data['dfDATUMS']):
             plot_datums(data,self.fig, self.ax, self.canvas)
         if len(data['dfCORES']):
@@ -1475,13 +1623,12 @@ class ADPFrame(wx.Frame):
                 locData.append((data['dfLOC']['age_ma'][i], data['dfLOC']['depth_mbsf'][i]))
         locList.append(list(locData))
         locIdx = 0
+        # Instantiate many variables
         self.showverts = True
         self.showHiatus = True
         self.epsilon = 5
         self.locList = locList
         self.locIdx = locIdx
-        #canvas = self.ax.figure.canvas
-        canvas = self.canvas
         toScale = data['toScale']
         self.dfDATUMS = data['dfDATUMS']
         self.plotGroups = data['plotGroups']
@@ -1492,71 +1639,29 @@ class ADPFrame(wx.Frame):
         self.color = 'g'
         self.linestyle = '-'
         self.linewidth = 1
-
         self.hcolor = 'r'
         self.hlinestyle = ':'
         self.hlinewidth = 2.5
         self.hLines = []
-
         self.locIdx = locIdx
-
         # For 'e' - Edit Labels
         self.title = title
         self.xAxisLabel = data['xAxisLabel']
         self.yAxisLabel = data['yAxisLabel']
-
-        x, y = zip(*self.locList[self.locIdx])
-
         if (self.plotColorType == 1):
             self.color = 'k'
             self.linestyle = '--'
         else:
             self.color = 'g'
             self.linestyle = '-'
-
-        # DEV: Fix for saving pdf plots, turn animated to False ...
-        #self.line, = ax.plot(x, y, marker='s', markerfacecolor=self.color, color=self.color,
-                             #markersize=3, animated=True)
-
-        # added self., self.linewidth, self.linestyle ... changed animated=True to animated=False
+        # Plot line of correlation
+        x, y = zip(*self.locList[self.locIdx])
         self.line, = self.ax.plot(x, y, marker='s', markerfacecolor=self.color, color=self.color,
                                   linestyle=self.linestyle, linewidth=self.linewidth, markersize=3, animated=False)
-
         # Plot hiatuses
         self.plot_hiatuses()
         # Setup index for pick of a vertex
         self._ind = None
-
-        # Setup callbacks
-        canvas.mpl_connect('draw_event', self.draw_callback)
-        canvas.mpl_connect('button_press_event', self.button_press_callback)
-        canvas.mpl_connect('button_release_event', self.button_release_callback)
-        canvas.mpl_connect('motion_notify_event', self.motion_notify_callback)
-        canvas.mpl_connect('key_press_event', self.key_press_callback)
-        #canvas.mpl_connect('close_event', self.handle_close)
-        self.statusBar = wx.StatusBar(self, -1)
-        self.SetStatusBar(self.statusBar)
-        self.sizer = wx.BoxSizer(wx.VERTICAL)
-        self.sizer.Add(canvas, 1, wx.LEFT | wx.TOP | wx.EXPAND)
-        self.SetSizer(self.sizer)
-        self.Fit()
-        self.toolbar = NavigationToolbar2Wx(self.canvas)
-        self.toolbar.Realize()
-        self.sizer.Add(self.toolbar, 0, wx.LEFT | wx.EXPAND)
-        self.toolbar.update()
-        self.menubar = ADP_Menubar(self)
-        Save = wx.Menu()
-        Save1 = Save.Append(wx.ID_ANY, 'Save Plot')
-        Save2 = Save.Append(wx.ID_ANY, 'Save LOC')
-        Save3 = Save.Append(wx.ID_ANY, 'Inspect LOC')
-        Save4 = Save.Append(wx.ID_ANY, 'Inspect Stratigraphic data')
-        self.menubar.Append(Save, 'Plot')
-        self.Bind(wx.EVT_MENU, lambda event: save_plot(self, self.holeID, self.fig), Save1)
-        self.Bind(wx.EVT_MENU, lambda event: save_loc(self, self.holeID, self.line), Save2)
-        self.Bind(wx.EVT_MENU, lambda event: self.inspect_loc(self.line.get_data()[0], self.line.get_data()[1]), Save3)
-        self.Bind(wx.EVT_MENU, lambda event: self.list_events(data), Save4)
-        self.SetMenuBar(self.menubar)
-        self.Show(True)
 
     def draw_callback(self, event):
         self.background = self.canvas.copy_from_bbox(self.ax.bbox)
@@ -1731,6 +1836,8 @@ class ADPFrame(wx.Frame):
             self.messageboard.WriteText('new axis:\nxMin=%.2f, xMax=%.2f, yMin=%.2f, yMax=%.2f\n' % (self.xMin, self.xMax, self.yMin, self.yMax))
             self.ax.axis(newAxes)
             self.set_plot_limits(self.xMin,self.xMax,self.yMin,self.yMax)
+            plt.clf()
+            self.plot(data,newAxes)
             self.canvas.draw()
 
         elif (event.key == 'e'): # Edit title and/or axes labels
@@ -1751,8 +1858,6 @@ class ADPFrame(wx.Frame):
             self.Help()
 
         elif (event.key == 'x'): # Exit
-            self.messageboard.WriteText('closing plot\n')
-            #self.fig.clf()
             self.Quit(event)
 
     def motion_notify_callback(self,event):
@@ -1904,6 +2009,7 @@ class ADPFrame(wx.Frame):
         w = LOCFrame(None, x, y)
 
     def Quit(self,event):
+        self.messageboard.WriteText('closing plot\n')
         self.Close()
 
     def Help(self,event):
@@ -1947,129 +2053,6 @@ class ADPFrame(wx.Frame):
             axes.append(yMax)
             self.messageboard.WriteText('user set axis:\nxMin=%.2f, xMax=%.2f, yMin=%.2f, yMax=%.2f\n' % (xMin, xMax, yMin, yMax))
         return axes
-
-
-class AnnoteFinder:
-    """
-    Callback for matplotlib to display an annotation when points are clicked on.
-    The point which is closest to the click and within xtol and ytol is
-     identified.
-
-    Register this function like this:
-
-    scatter(xdata, ydata)
-    af = AnnoteFinder(xdata, ydata, annotes)
-    connect('button_press_event', af)
-    """
-    # DEV: class AnnoteFinder:   code copied, modified from jkitchin
-    # DEV: see jkitchin on GitHub
-    # DEV: John Kitchin, Carnegie Mellon University (jkitchin@andrew.cmu.edu)
-    # DEV: code from annotate_picks.py and mmapsrep.py
-
-    def __init__(self,xdata,ydata,annotes,axis=None,xtol=None,ytol=None):
-        self.data = zip(xdata,ydata,annotes)
-        if xtol is None:
-            #xtol = ((max(xdata) - min(xdata))/float(len(xdata)))/2
-            xtol = ((max(xdata) - min(xdata))/float(len(xdata)))/4
-            if ytol is None:
-                #ytol = ((max(ydata) - min(ydata))/float(len(ydata)))/2
-                ytol = ((max(ydata) - min(ydata))/float(len(ydata)))/4
-
-        self.xtol = xtol
-        self.ytol = ytol
-        if axis is None:
-            self.axis = plt.gca()
-        else:
-            self.axis= axis
-        self.drawnAnnotations = {}
-        self.links = []
-
-    def distance(self,x1,x2,y1,y2):
-        """
-        return the distance between two points
-        """
-        return math.hypot(x1 - x2, y1 - y2)
-
-    def __call__(self,event):
-        if event.inaxes:
-          clickX = event.xdata
-          clickY = event.ydata
-          if self.axis is None or self.axis==event.inaxes:
-            annotes = []
-            for x,y,a in self.data:
-                if (clickX-self.xtol < x < clickX+self.xtol and
-                  clickY-self.ytol < y < clickY+self.ytol):
-                    # DEV:  added button check
-                    if (event.button == 1 or event.button == 2):
-                        a = a[0]+":"+a[2]  # For plot_code, plot_color
-                        btn = event.button
-                    else:
-                        a = a[0]+":"+a[1]+":"+a[2] # For plot_code, datum_name, color
-                        btn = 3
-                    annotes.append((self.distance(x,clickX,y,clickY),x,y,a))
-
-            if annotes:
-                #annotes.sort()
-                #annote = annotes[0]
-                #distance, x, y, annote = annote
-                # DEV: modification:  report all at x,y
-                for i in range(0,len(annotes)):
-                    distance, x, y, annote = annotes[i]
-                    #self.drawAnnote(event.inaxes,x,y,annote) # Modification
-                    self.drawAnnote(event.inaxes,x,y,annote,clickX,clickY,i,btn)
-                    for j in self.links:
-                        j.drawSpecificAnnote(annote)
-
-    # Modification: added clickX,clickY,idx
-    def drawAnnote(self,axis,x,y,annote,clickX,clickY,idx,btn):
-        """
-        Draw the annotation on the plot
-        """
-        if self.drawnAnnotations.has_key((x,y)): # Modification
-            markers = self.drawnAnnotations[(x,y)]
-            for m in markers:
-                m.set_visible(not m.get_visible())
-            self.axis.figure.canvas.draw()
-            del self.drawnAnnotations[(x,y)] # Modification
-        else:
-            color  = annote[annote.rfind(':',0)+1:]
-            annote = annote[0:annote.rfind(':',0)]
-            #t = axis.text(x+.10,y,"%s (%6.3f, %8.3f)"%(annote,x,y),size=7.,color=color)
-            if (clickX <= x): # DEV: figure quadrant to post text
-                xpos = x - .10
-                ha = 'right'
-            else:
-                xpos = x + .10
-                ha = 'left'
-            if (clickY <= y):
-                ypos = y - .10
-                if (idx == 0):
-                    va = 'top'
-                else:
-                    va = 'bottom'
-            else:
-                ypos = y + .10
-                if (idx == 0):
-                    va = 'bottom'
-                else:
-                    va = 'top'
-            if (btn == 1):
-                t = axis.text(xpos,ypos,"%s"%(annote),size=7.,color=color,horizontalalignment=ha,verticalalignment=va)
-            else:
-                t = axis.text(xpos,ypos,"%s (%6.3f, %8.3f)"%(annote,x,y),size=7.,color=color,horizontalalignment=ha,verticalalignment=va)
-            #m = axis.scatter([x],[y],marker='o',s=128,alpha=0.4,c='yellow') # DEV: highlight with yellow circle
-            m = axis.scatter([x],[y],marker='.',s=0,c='k',zorder=100) # DEV: modified, s=0 to show text only
-            self.drawnAnnotations[(x,y)]=(t,m)
-            self.axis.figure.canvas.draw()
-
-        # DEV: can use this code with modification to toggle on/off all annotations
-        # DEV: modify code for event with key_pressed 't' or 'a' ....
-        # DEV: see annotation_picks_ALL.py that shows modifications (don't check for distance/xtol/ytol)
-
-    def drawSpecificAnnote(self,annote):
-        annotesToDraw = [(x,y,a) for x,y,a in self.data if a==annote]
-        for x,y,a in annotesToDraw:
-            self.drawAnnote(self.axis,x,y,a)
 
 #Main Frame:
 class WelcomeFrame(wx.Frame):
