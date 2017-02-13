@@ -321,8 +321,7 @@ def plot_datums(data,fig,ax,canvas):
            (dfDATUMS['datum_age_max_ma'][i] > dfDATUMS['datum_age_min_ma'][i])):
             xWidth = dfDATUMS['datum_age_max_ma'][i] - dfDATUMS['datum_age_min_ma'][i]
             yHeight = abs(dfDATUMS['top_depth'][i] - dfDATUMS['bottom_depth'][i])
-            color = 'none'
-            saveRangeBoxes.append([plotGroupIdx, fossilGroup+':'+datumType, dfDATUMS['datum_age_min_ma'][i], dfDATUMS['bottom_depth'][i], xWidth, yHeight, color])
+            saveRangeBoxes.append([plotGroupIdx, fossilGroup+':'+datumType, dfDATUMS['datum_age_min_ma'][i], dfDATUMS['bottom_depth'][i], xWidth, yHeight, 'white'])
 
         # Annotate the datums with the plotCode
         # DEV: might fix this section to only use plotGroups ... either you
@@ -518,7 +517,6 @@ def plot_cores(dfCORES,xMin,xMax,yMin,yMax):
     """Plot the cores and core sections."""
     # Calculate width of rectangle for plotting cores
     cWidth = (xMax - xMin) * .025
-
     # Build x values for rectangles
     xline=[]
     xline.append(xMax - cWidth / 5.)
@@ -550,7 +548,6 @@ def plot_time_scale(dfTIME,xMin,xMax,yMin,yMax):
     ageName  = dfTIME['age_name']
     ageMinMa   = dfTIME['age_min_ma']
     ageMaxMa = dfTIME['age_max_ma']
-
     for i in range(0,len(ageName)):
         # Extract and clean up ageName (Upper/Middle/Early)
         if (ageLevel[i] == 'Subepoch'):
@@ -618,7 +615,6 @@ def plot_chrons(dfCHRONS,xMin,xMax,yMin,yMax):
 
     # Calculate height of rectangle from Y axis range
     cHeight = abs((yMax-yMin)*.025)
-
     for i in range(0,len(dfCHRONS)):
         if ((dfCHRONS['chron_age_min_ma'][i] >= xMin and dfCHRONS['chron_age_min_ma'][i] <= xMax
           and dfCHRONS['chron_age_max_ma'][i] >= xMin and dfCHRONS['chron_age_max_ma'][i] <= xMax)
@@ -1528,7 +1524,6 @@ class ADPFrame(wx.Frame):
 
         # Plot hiatuses
         self.plot_hiatuses()
-
         # Setup index for pick of a vertex
         self._ind = None
 
