@@ -1295,7 +1295,9 @@ class HoleQueryDialog(wx.Dialog): # Dialog to choose hole from db
             self.list_ctrl.SetStringItem(self.index, 7, str(data['meters_recovered']))
             self.index += 1
         hor = Ok_Cancel_Wrapper(self)
-        sizer.Add(hor)
+        sizer.Add((20,20))
+        sizer.Add(hor,0,wx.CENTER)
+        sizer.Add((20,20))
         self.SetSizerAndFit(sizer)
         self.Layout()
 
@@ -1329,11 +1331,14 @@ class GetFilesDialog(wx.Dialog): # Dialog to choose files to work with
             button_loc.Bind(wx.EVT_BUTTON, self.locLookUp)
             flex.Add(self.locfile)
             flex.Add(button_loc)
-        hor = Ok_Cancel_Wrapper(self)
-        flex.Add((20,20))
-        flex.Add(hor)
         flex.AddGrowableCol(1)
-        self.SetSizerAndFit(flex)
+        hor = Ok_Cancel_Wrapper(self)
+        sizer = wx.BoxSizer(wx.VERTICAL)
+        sizer.Add(flex)
+        sizer.Add((20,20))
+        sizer.Add(hor,0,wx.CENTER)
+        sizer.Add((20,20))
+        self.SetSizerAndFit(sizer)
         self.Layout()
 
     def CoreLookUp(self,event):
@@ -1376,11 +1381,14 @@ class dbDialog(wx.Dialog): # Dialog for db connexion
         self.password = wx.TextCtrl(self, size=(300,-1), style=wx.TE_PASSWORD)
         if 'pw' in data.keys(): self.password.SetValue(data['pw'])
         flex.Add(self.password)
-        hor = Ok_Cancel_Wrapper(self)
-        flex.Add((20,20))
-        flex.Add(hor)
         flex.AddGrowableCol(1)
-        self.SetSizerAndFit(flex)
+        hor = Ok_Cancel_Wrapper(self)
+        sizer = wx.BoxSizer(wx.VERTICAL)
+        sizer.Add(flex)
+        sizer.Add((20,20))
+        sizer.Add(hor,0,wx.CENTER)
+        sizer.Add((20,20))
+        self.SetSizerAndFit(sizer)
         self.Layout()
 
 class ParamDialog(wx.Dialog): # Dialog to choose parameters
@@ -1409,11 +1417,14 @@ class ParamDialog(wx.Dialog): # Dialog to choose parameters
         self.set_axes = wx.RadioBox(self, choices=['Yes','No'], majorDimension=1, style=wx.RA_SPECIFY_ROWS)
         self.set_axes.SetSelection(1) # Defaults to No
         flex.Add(self.set_axes)
-        hor = Ok_Cancel_Wrapper(self)
-        flex.Add((20,20))
-        flex.Add(hor)
         flex.AddGrowableCol(1)
-        self.SetSizerAndFit(flex)
+        hor = Ok_Cancel_Wrapper(self)
+        sizer = wx.BoxSizer(wx.VERTICAL)
+        sizer.Add(flex)
+        sizer.Add((20,20))
+        sizer.Add(hor,0,wx.CENTER)
+        sizer.Add((20,20))
+        self.SetSizerAndFit(sizer)
         self.Layout()
 
 class AxisDialog(wx.Dialog): # Dialog to set the axes
@@ -1439,6 +1450,7 @@ class AxisDialog(wx.Dialog): # Dialog to set the axes
         hor = Ok_Cancel_Wrapper(self)
         flex.Add((20,20))
         flex.Add(hor)
+        flex.Add((20,20))
         flex.AddGrowableCol(1)
         self.SetSizerAndFit(flex)
         self.Layout()
@@ -1459,11 +1471,14 @@ class LabelDialog(wx.Dialog): # Dialog to set the labels
         self.yaxis = wx.TextCtrl(self, size=(300,-1))
         self.yaxis.SetValue(str(labels[2]))
         flex.Add(self.yaxis)
-        hor = Ok_Cancel_Wrapper(self)
-        flex.Add((20,20))
-        flex.Add(hor)
         flex.AddGrowableCol(1)
-        self.SetSizerAndFit(flex)
+        hor = Ok_Cancel_Wrapper(self)
+        sizer = wx.BoxSizer(wx.VERTICAL)
+        sizer.Add(flex)
+        sizer.Add((20,20))
+        sizer.Add(hor,0,wx.CENTER)
+        sizer.Add((20,20))
+        self.SetSizerAndFit(sizer)
         self.Layout()
 
 # Help/Info frames:
@@ -1585,7 +1600,7 @@ class ADPFrame(wx.Frame):
         Save5 = Save.Append(wx.ID_ANY, 'Project events on LOC')
         self.menubar.Append(Save, 'Plot')
         self.Bind(wx.EVT_MENU, lambda event: save_plot(self, self.holeID, self.fig), Save1)
-        self.Bind(wx.EVT_MENU, lambda event: save_loc(self, self.holeID, self.line), Save2)
+        self.Bind(wx.EVT_MENU, lambda event: save_loc(self, self.holeID, self.line.get_data()[0], self.line.get_data()[1]), Save2)
         self.Bind(wx.EVT_MENU, lambda event: self.inspect_loc(self.line.get_data()[0], self.line.get_data()[1]), Save3)
         self.Bind(wx.EVT_MENU, lambda event: self.list_events(data), Save4)
         self.Bind(wx.EVT_MENU, lambda event: project_events(self,data['dfDATUMS'],self.line.get_data()[0], self.line.get_data()[1]), Save5)
@@ -2073,7 +2088,6 @@ class WelcomeFrame(wx.Frame):
         outer = wx.BoxSizer(wx.HORIZONTAL)
         outer.Add(sizer,1,wx.Center)
         self.SetSizer(outer)
-        self.Show(True)
 
     def Quit(self,event):
         self.Close()
@@ -2178,4 +2192,5 @@ if __name__ == '__main__':
     data = {} # This dictionary will contain every single 'global' variable and pass them around frames, dialogs, functions, etc.
     adp = wx.App(False) # Instantiate software
     frame = WelcomeFrame(None, data) # Open main frame
+    frame.Show()
     adp.MainLoop() # Loop
