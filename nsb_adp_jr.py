@@ -1572,42 +1572,6 @@ class ADPFrame(wx.Frame):
         self.fig = plt.figure()
         self.messageboard.WriteText('plotting...\n')
         self.canvas = FigureCanvas(self, -1, self.fig)
-        self.plot(data, axes)
-        # Setup callbacks
-        self.canvas.mpl_connect('draw_event', self.draw_callback)
-        self.canvas.mpl_connect('button_press_event', self.button_press_callback)
-        self.canvas.mpl_connect('button_release_event', self.button_release_callback)
-        self.canvas.mpl_connect('motion_notify_event', self.motion_notify_callback)
-        self.canvas.mpl_connect('key_press_event', self.key_press_callback)
-        # Setup Status bar, toolbar and sizers
-        self.statusBar = wx.StatusBar(self, -1)
-        self.SetStatusBar(self.statusBar)
-        self.sizer = wx.BoxSizer(wx.VERTICAL)
-        self.sizer.Add(self.canvas, 1, wx.LEFT | wx.TOP | wx.EXPAND)
-        self.SetSizer(self.sizer)
-        self.Fit()
-        self.toolbar = NavigationToolbar2Wx(self.canvas)
-        self.toolbar.Realize()
-        self.sizer.Add(self.toolbar, 0, wx.LEFT | wx.EXPAND)
-        self.toolbar.update()
-        # Setup menubar
-        self.menubar = ADP_Menubar(self)
-        Save = wx.Menu()
-        Save1 = Save.Append(wx.ID_ANY, 'Save Plot')
-        Save2 = Save.Append(wx.ID_ANY, 'Save LOC')
-        Save3 = Save.Append(wx.ID_ANY, 'Inspect LOC')
-        Save4 = Save.Append(wx.ID_ANY, 'Inspect Stratigraphic data')
-        Save5 = Save.Append(wx.ID_ANY, 'Project events on LOC')
-        self.menubar.Append(Save, 'Plot')
-        self.Bind(wx.EVT_MENU, lambda event: save_plot(self, self.holeID, self.fig), Save1)
-        self.Bind(wx.EVT_MENU, lambda event: save_loc(self, self.holeID, self.line.get_data()[0], self.line.get_data()[1]), Save2)
-        self.Bind(wx.EVT_MENU, lambda event: self.inspect_loc(self.line.get_data()[0], self.line.get_data()[1]), Save3)
-        self.Bind(wx.EVT_MENU, lambda event: self.list_events(data), Save4)
-        self.Bind(wx.EVT_MENU, lambda event: project_events(self,data['dfDATUMS'],self.line.get_data()[0], self.line.get_data()[1]), Save5)
-        self.SetMenuBar(self.menubar)
-        self.Show(True)
-
-    def plot(self,data,axes):
         self.ax = self.fig.add_subplot(111)
         self.xMin = max(axes[0],0)
         self.xMax = axes[1]
@@ -1677,6 +1641,39 @@ class ADPFrame(wx.Frame):
         self.plot_hiatuses()
         # Setup index for pick of a vertex
         self._ind = None
+        # Setup callbacks
+        self.canvas.mpl_connect('draw_event', self.draw_callback)
+        self.canvas.mpl_connect('button_press_event', self.button_press_callback)
+        self.canvas.mpl_connect('button_release_event', self.button_release_callback)
+        self.canvas.mpl_connect('motion_notify_event', self.motion_notify_callback)
+        self.canvas.mpl_connect('key_press_event', self.key_press_callback)
+        # Setup Status bar, toolbar and sizers
+        self.statusBar = wx.StatusBar(self, -1)
+        self.SetStatusBar(self.statusBar)
+        self.sizer = wx.BoxSizer(wx.VERTICAL)
+        self.sizer.Add(self.canvas, 1, wx.LEFT | wx.TOP | wx.EXPAND)
+        self.SetSizer(self.sizer)
+        self.Fit()
+        self.toolbar = NavigationToolbar2Wx(self.canvas)
+        self.toolbar.Realize()
+        self.sizer.Add(self.toolbar, 0, wx.LEFT | wx.EXPAND)
+        self.toolbar.update()
+        # Setup menubar
+        self.menubar = ADP_Menubar(self)
+        Save = wx.Menu()
+        Save1 = Save.Append(wx.ID_ANY, 'Save Plot')
+        Save2 = Save.Append(wx.ID_ANY, 'Save LOC')
+        Save3 = Save.Append(wx.ID_ANY, 'Inspect LOC')
+        Save4 = Save.Append(wx.ID_ANY, 'Inspect Stratigraphic data')
+        Save5 = Save.Append(wx.ID_ANY, 'Project events on LOC')
+        self.menubar.Append(Save, 'Plot')
+        self.Bind(wx.EVT_MENU, lambda event: save_plot(self, self.holeID, self.fig), Save1)
+        self.Bind(wx.EVT_MENU, lambda event: save_loc(self, self.holeID, self.line.get_data()[0], self.line.get_data()[1]), Save2)
+        self.Bind(wx.EVT_MENU, lambda event: self.inspect_loc(self.line.get_data()[0], self.line.get_data()[1]), Save3)
+        self.Bind(wx.EVT_MENU, lambda event: self.list_events(data), Save4)
+        self.Bind(wx.EVT_MENU, lambda event: project_events(self,data['dfDATUMS'],self.line.get_data()[0], self.line.get_data()[1]), Save5)
+        self.SetMenuBar(self.menubar)
+        self.Show(True)
 
     def draw_callback(self, event):
         self.background = self.canvas.copy_from_bbox(self.ax.bbox)
@@ -1852,7 +1849,28 @@ class ADPFrame(wx.Frame):
             self.ax.axis(newAxes)
             self.set_plot_limits(self.xMin,self.xMax,self.yMin,self.yMax)
             plt.clf()
-            self.plot(data,newAxes)
+            self.ax = self.fig.add_subplot(111)
+            self.ax.set_xlim([self.xMin,self.xMax])
+            self.ax.set_ylim([self.yMin - (abs(self.yMax - self.yMin) * 0.05), self.yMax + (abs(self.yMax - self.yMin) * .05)])
+            #Plotting
+            if len(data['dfDATUMS']):
+                plot_datums(data,self.fig, self.ax, self.canvas)
+            if len(data['dfCORES']):
+                plot_cores(data['dfCORES'], self.xMin, self.xMax, self.yMin, self.yMax)
+            if len(data['dfTIME']):
+                plot_time_scale(data['dfTIME'], self.xMin, self.xMax, self.yMin, self.yMax)
+            if len(data['dfCHRONS']):
+                plot_chrons(data['dfCHRONS'], self.xMin, self.xMax, self.yMin, self.yMax)
+            if 'dfPMAGS' in data.keys():
+                plot_paleomag_interval(data['dfPMAGS'], self.xMin, self.xMax, self.yMin, self.yMax)
+            plot_axes_labels(data)
+            plot_title(data['holeID'])
+            self.hLines = []
+            x, y = zip(*self.locList[self.locIdx])
+            self.line, = self.ax.plot(x, y, marker='s', markerfacecolor=self.color, color=self.color,
+                                      linestyle=self.linestyle, linewidth=self.linewidth, markersize=3, animated=False)
+            self.plot_hiatuses()
+            # Setup index for pick of a vertex
             self.canvas.draw()
 
         elif (event.key == 'e'): # Edit title and/or axes labels
