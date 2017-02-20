@@ -1518,7 +1518,8 @@ class ListEventsFrame(wx.Frame):
         #wx.Dialog.__init__(self, parent, -1, title="NSB-ADP: List Events",size=(750,500), pos=(300,10))
         dfLIST = data['dfDATUMS'][['plot_fossil_group', 'datum_type', 'datum_name',
                           'plot_code', 'datum_age_min_ma', 'datum_age_max_ma',
-                          'top_depth','bottom_depth', 'plot_age', 'plot_depth']]
+                          'top_depth','bottom_depth', 'plot_age', 'plot_depth',
+                          'origMinAge', 'origMaxAge']]
         dfLIST = dfLIST.sort(['plot_fossil_group','top_depth','datum_name'], ascending=[True,False,True])
         self.index = 0
         self.eventList = dfLIST.T.to_dict().values()
@@ -1533,6 +1534,8 @@ class ListEventsFrame(wx.Frame):
         self.list_ctrl.InsertColumn(7,'bottom_depth')
         self.list_ctrl.InsertColumn(8,'plot_age')
         self.list_ctrl.InsertColumn(9,'plot_depth')
+        self.list_ctrl.InsertColumn(10,'origMinAge')
+        self.list_ctrl.InsertColumn(11,'origMaxAge')
         sizer = wx.BoxSizer(wx.VERTICAL)
         sizer.Add(self.list_ctrl, 0, wx.ALL|wx.EXPAND, 5)
         for data in self.eventList:
@@ -1546,6 +1549,8 @@ class ListEventsFrame(wx.Frame):
             self.list_ctrl.SetStringItem(self.index, 7, str(data['bottom_depth']))
             self.list_ctrl.SetStringItem(self.index, 8, str(data['plot_age']))
             self.list_ctrl.SetStringItem(self.index, 9, str(data['plot_depth']))
+            self.list_ctrl.SetStringItem(self.index, 10, str(data['origMinAge']))
+            self.list_ctrl.SetStringItem(self.index, 11, str(data['origMaxAge']))
             self.index += 1
         self.SetSizer(sizer)
         self.Show(True)
