@@ -2180,11 +2180,38 @@ class WelcomeFrame(wx.Frame):
                     data['dfCORES'] = fix_cores(data['dfCORES'])
                     if data['plotPMAG'] == 1: data['dfPMAGS'] = read_paleomag_interval(self,files.pmagfile.GetValue())
                     if data['plotLOC'] == 1: data['dfLOC'] = read_loc(self,files.locfile.GetValue(), data)
+            data['dfDATUMS'] = self.convert_agescale(data, params.source.GetStringSelection())
             self.holeID = data['holeID']
             self.messageboard.WriteText('\nHole: %s\n' % data['holeID']) # Summarize data to be plotted
             self.messageboard.WriteText('Number of events: %s\n' % len(data['dfDATUMS']))
             if 'dfLOC' in data.keys(): self.messageboard.WriteText('Number of tiepoints: %s\n\n' % len(data['dfLOC']))
             w = ADPFrame(self,data) # Go on and plot
+
+    def convert_agescale(self,data, source):
+        toScale = data['toScale']
+        toAgeDict = data['dfGPTS'][['event_id','age_ma']][(data['dfGPTS'].scale == toScale)].to_dict('records')
+        origMaxAge = []
+        origMinAge = []
+        # Check each datum and convert age if source scale different than target (Grad12)
+        for i in range(0,len(data['dfDATUMS'])):
+            if source =='Database':
+                fromScale = data['dfDATUMS']['scale'][i]
+            else:
+                fromScale = data['fromScale']
+            fromAgeDict = data['dfGPTS'][['event_id','age_ma']][data['dfGPTS'].scale == fromScale].to_dict('records')
+            maxAge = data['dfDATUMS']['datum_age_max_ma'][i]
+            minAge = data['dfDATUMS']['datum_age_min_ma'][i]
+            origMaxAge.append(maxAge) # Save original
+            origMinAge.append(minAge) # Save original
+            if (fromScale != toScale): # If the fromScale != toScale, convert age for every point ...
+                data['dfDATUMS']['datum_age_max_ma'][i] = float(str(round(age_convert(maxAge, fromAgeDict, toAgeDict),3)))
+                if (maxAge != minAge):
+                    data['dfDATUMS']['datum_age_min_ma'][i] = float(str(round(age_convert(minAge, fromAgeDict, toAgeDict),3)))
+                else:
+                    data['dfDATUMS']['datum_age_min_ma'][i] = data['dfDATUMS']['datum_age_max_ma'][i]
+        data['dfDATUMS']['origMaxAge'] = origMaxAge
+        data['dfDATUMS']['origMinAge'] = origMinAge
+        return data['dfDATUMS']
 
 if __name__ == '__main__':
     #Change default of matplotlib and pandas:
