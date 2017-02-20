@@ -1089,12 +1089,18 @@ def read_loc(parent,fileName, data):
                     parent.messageboard.WriteText("*** Skipping read LOC file, will not plot ***\n")
                     return df
                 #timeScale = row[1] # Time scale, e.g., Berg95
-                data['fromScale'] = row[1] # Paleomag chron scale, e.g., CK95
+                fromScale = row[1] # Paleomag chron scale, e.g., CK95
             if (n > 2): # Data lines
                 d.append({'age_ma':float(row[0]), 'depth_mbsf':float(row[1])})
         df = pd.DataFrame(d, columns = ['age_ma', 'depth_mbsf'])
         for i in range(len(df)):
             df['depth_mbsf'][i] = fix_null(df['depth_mbsf'][i],1) * -1.
+        if fromScale != data['toScale']:
+            fromAgeDict = data['dfGPTS'][['event_id','age_ma']][data['dfGPTS'].scale == fromScale].to_dict('records')
+            toAgeDict = data['dfGPTS'][['event_id','age_ma']][data['dfGPTS'].scale == data['toScale']].to_dict('records')
+            for i in range(0,len(df)):
+                locAge = df['age_ma'][i]
+                df['age_ma'][i] = float(str(round(age_convert(locAge, fromAgeDict, toAgeDict),3)))
     return df
 
 #SET_ functions:
