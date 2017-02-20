@@ -2245,6 +2245,8 @@ if __name__ == '__main__':
             os.environ['NSBPATH'] = os.path.dirname(sys.executable)
     else:
         os.environ['NSBPATH'] = os.path.dirname(os.path.realpath(__file__))
+    log = os.environ['NSBPATH']+'/log.txt'
+    sys.stderr = open('log.txt','w',1)
     data = {} # This dictionary will contain every single 'global' variable and pass them around frames, dialogs, functions, etc.
     adp = wx.App(False) # Instantiate software
     frame = WelcomeFrame(None, data) # Open main frame
