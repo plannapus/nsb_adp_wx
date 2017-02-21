@@ -2190,12 +2190,15 @@ class WelcomeFrame(wx.Frame):
                     data['dfDATUMS'] = read_datums(self,files.stratfile.GetValue(), data)
                     data['dfCORES'] = fix_cores(data['dfCORES'])
                     if data['plotPMAG'] == 1: data['dfPMAGS'] = read_paleomag_interval(self,files.pmagfile.GetValue())
-                    if data['plotLOC'] == 1: data['dfLOC'] = read_loc(self,files.locfile.GetValue(), data)
+                    if data['plotLOC'] == 1:
+                        data['dfLOC'] = read_loc(self,files.locfile.GetValue(), data)
+                    else:
+                        data['dfLOC'] = []
             data['dfDATUMS'] = self.convert_agescale(data, params.source.GetStringSelection())
             self.holeID = data['holeID']
             self.messageboard.WriteText('\nHole: %s\n' % data['holeID']) # Summarize data to be plotted
             self.messageboard.WriteText('Number of events: %s\n' % len(data['dfDATUMS']))
-            if 'dfLOC' in data.keys(): self.messageboard.WriteText('Number of tiepoints: %s\n\n' % len(data['dfLOC']))
+            self.messageboard.WriteText('Number of tiepoints: %s\n\n' % len(data['dfLOC']))
             w = ADPFrame(self,data) # Go on and plot
 
     def convert_agescale(self,data, source):
@@ -2245,7 +2248,7 @@ if __name__ == '__main__':
             os.environ['NSBPATH'] = os.path.dirname(sys.executable)
     else:
         os.environ['NSBPATH'] = os.path.dirname(os.path.realpath(__file__))
-    log = os.environ['NSBPATH']+'/log.txt'
+    log = os.environ['NSBPATH']+'/log.txt' #Logger
     sys.stderr = open('log.txt','w',1)
     data = {} # This dictionary will contain every single 'global' variable and pass them around frames, dialogs, functions, etc.
     adp = wx.App(False) # Instantiate software
