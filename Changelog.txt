@@ -1,3 +1,8 @@
+Version 0.2:
+	- Added possibility to load new stratigraphic events or a new LOC from file even if working with database data.
+	- User can now save biostratigraphic data to a file, in the Inspect Biostratigraphic Events dialog window.
+	- Got rid of some minor annoyances such as the sofware not accepting input files with extra new lines at the end of the file; got rid of hardcoded 'toScale' variable in some functions; wrote a function `replot` to avoid duplicated code.
+
 Version 0.1 (14/02/2017):
 	- Port of Pat Diver's nsb_adp.py to wxPython. A large amount of code needed to be modified to fit wx (including many scope issue).
 	- Corrected bug which happened on some sites and prevented the plot from being drawn (caused by `color ='none'`).
