@@ -1221,6 +1221,50 @@ def project_events(parent, dfDATUMS,x,y):
 
         fo.close()
 
+def convert_agescale_DB(data):
+    toScale = data['toScale']
+    toAgeDict = data['dfGPTS'][['event_id','age_ma']][(data['dfGPTS'].scale == toScale)].to_dict('records')
+    origMaxAge = []
+    origMinAge = []
+    # Check each datum and convert age if source scale different than target (Grad12)
+    for i in range(0,len(data['dfDATUMS'])):
+        fromScale = data['dfDATUMS']['scale'][i]
+        fromAgeDict = data['dfGPTS'][['event_id','age_ma']][data['dfGPTS'].scale == fromScale].to_dict('records')
+        maxAge = data['dfDATUMS']['datum_age_max_ma'][i]
+        minAge = data['dfDATUMS']['datum_age_min_ma'][i]
+        origMaxAge.append(maxAge) # Save original
+        origMinAge.append(minAge) # Save original
+        if (fromScale != toScale): # If the fromScale != toScale, convert age for every point ...
+            data['dfDATUMS']['datum_age_max_ma'][i] = float(str(round(age_convert(maxAge, fromAgeDict, toAgeDict),3)))
+            if (maxAge != minAge):
+                data['dfDATUMS']['datum_age_min_ma'][i] = float(str(round(age_convert(minAge, fromAgeDict, toAgeDict),3)))
+            else:
+                data['dfDATUMS']['datum_age_min_ma'][i] = data['dfDATUMS']['datum_age_max_ma'][i]
+    data['dfDATUMS']['origMaxAge'] = origMaxAge
+    data['dfDATUMS']['origMinAge'] = origMinAge
+    return data['dfDATUMS']
+
+def convert_agescale_file(toScale, fromScale, dfGPTS, dfDATUMS):
+    toAgeDict = dfGPTS[['event_id','age_ma']][(dfGPTS.scale == toScale)].to_dict('records')
+    origMaxAge = []
+    origMinAge = []
+    # Check each datum and convert age if source scale different than target (Grad12)
+    for i in range(0,len(dfDATUMS)):
+        fromAgeDict = dfGPTS[['event_id','age_ma']][dfGPTS.scale == fromScale].to_dict('records')
+        maxAge = dfDATUMS['datum_age_max_ma'][i]
+        minAge = dfDATUMS['datum_age_min_ma'][i]
+        origMaxAge.append(maxAge) # Save original
+        origMinAge.append(minAge) # Save original
+        if (fromScale != toScale): # If the fromScale != toScale, convert age for every point ...
+            dfDATUMS['datum_age_max_ma'][i] = float(str(round(age_convert(maxAge, fromAgeDict, toAgeDict),3)))
+            if (maxAge != minAge):
+                dfDATUMS['datum_age_min_ma'][i] = float(str(round(age_convert(minAge, fromAgeDict, toAgeDict),3)))
+            else:
+                dfDATUMS['datum_age_min_ma'][i] = dfDATUMS['datum_age_max_ma'][i]
+    dfDATUMS['origMaxAge'] = origMaxAge
+    dfDATUMS['origMinAge'] = origMinAge
+    return dfDATUMS
+
 # New GUI (JR) below:
 # Wrappers:
 
@@ -1741,6 +1785,7 @@ class ADPFrame(wx.Frame):
         if dlg.ShowModal() == wx.ID_OK:
             fileName = dlg.GetPath()
             new_data = read_datums(self,fileName, data)
+            new_data = convert_agescale_file(data['toScale'], data['fromScale'], data['dfGPTS'], new_data)
             data['dfDATUMS'] = pd.concat([data['dfDATUMS'],new_data], ignore_index=True)
             axes = self.process_axes(data)
             self.replot(data, axes)
@@ -2245,6 +2290,7 @@ class WelcomeFrame(wx.Frame):
                             data['dfLOC'] = query_loc(engine,data['holeID'])
                             data['dfPMAGS'] = query_paleomag_interval(engine,data['holeID'])
                             data['holeID'] = re.split('_',data['holeID'])[1]
+                            data['dfDATUMS'] = convert_agescale_DB(data)
             else: # If data taken from files
                 files = GetFilesDialog(self, data= data) # Open the file selection dialog window
                 if files.ShowModal() == wx.ID_OK: # When OK clicked, read those files accordingly
@@ -2256,38 +2302,12 @@ class WelcomeFrame(wx.Frame):
                         data['dfLOC'] = read_loc(self,files.locfile.GetValue(), data)
                     else:
                         data['dfLOC'] = []
-            data['dfDATUMS'] = self.convert_agescale(data, params.source.GetStringSelection())
+                    data['dfDATUMS'] = convert_agescale_file(data['toScale'], data['fromScale'], data['dfGPTS'], data['dfDATUMS'])
             self.holeID = data['holeID']
             self.messageboard.WriteText('\nHole: %s\n' % data['holeID']) # Summarize data to be plotted
             self.messageboard.WriteText('Number of events: %s\n' % len(data['dfDATUMS']))
             self.messageboard.WriteText('Number of tiepoints: %s\n\n' % len(data['dfLOC']))
             w = ADPFrame(self,data) # Go on and plot
-
-    def convert_agescale(self,data, source):
-        toScale = data['toScale']
-        toAgeDict = data['dfGPTS'][['event_id','age_ma']][(data['dfGPTS'].scale == toScale)].to_dict('records')
-        origMaxAge = []
-        origMinAge = []
-        # Check each datum and convert age if source scale different than target (Grad12)
-        for i in range(0,len(data['dfDATUMS'])):
-            if source =='Database':
-                fromScale = data['dfDATUMS']['scale'][i]
-            else:
-                fromScale = data['fromScale']
-            fromAgeDict = data['dfGPTS'][['event_id','age_ma']][data['dfGPTS'].scale == fromScale].to_dict('records')
-            maxAge = data['dfDATUMS']['datum_age_max_ma'][i]
-            minAge = data['dfDATUMS']['datum_age_min_ma'][i]
-            origMaxAge.append(maxAge) # Save original
-            origMinAge.append(minAge) # Save original
-            if (fromScale != toScale): # If the fromScale != toScale, convert age for every point ...
-                data['dfDATUMS']['datum_age_max_ma'][i] = float(str(round(age_convert(maxAge, fromAgeDict, toAgeDict),3)))
-                if (maxAge != minAge):
-                    data['dfDATUMS']['datum_age_min_ma'][i] = float(str(round(age_convert(minAge, fromAgeDict, toAgeDict),3)))
-                else:
-                    data['dfDATUMS']['datum_age_min_ma'][i] = data['dfDATUMS']['datum_age_max_ma'][i]
-        data['dfDATUMS']['origMaxAge'] = origMaxAge
-        data['dfDATUMS']['origMinAge'] = origMinAge
-        return data['dfDATUMS']
 
 if __name__ == '__main__':
     #Change default of matplotlib and pandas:
