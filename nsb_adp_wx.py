@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
 import os, sys
-import decimal, string, datetime, tempfile
+reload(sys)
+sys.setdefaultencoding("utf-8")
+
+import decimal, string, datetime
 import re, math
 from bisect import bisect_left
 import csv
@@ -8,7 +11,7 @@ import csv
 import numpy as np
 import pandas as pd
 import pandas.io.sql as psql
-from sqlalchemy import create_engine, exc
+from sqlalchemy import create_engine
 
 import wx, wx.html
 
@@ -32,7 +35,8 @@ def query_loc(engine,holeID): #Work
         SELECT site_hole,max(revision_no)
         FROM neptune_age_model
         GROUP BY 1)
-        AND hole_id = '%s';
+        AND hole_id = '%s'
+        ORDER BY age_ma, depth_mbsf;
     """ % (holeID,)
     # Use Pandas to run query and retrieve a dataframe of the sql results
     dfLOC = psql.read_sql_query(sqlLOC, engine)
@@ -249,7 +253,7 @@ def age_convert(age, fromScale, toScale):
         n = new[m-1] + (age - old[m-1])*(new[m]-new[m-1])/(old[m]-old[m-1])
     age = n
 
-    return(age)
+    return age
 
 def get_minmax_ages_datum(dfDATUMS):
     """Get min/max for ages (x axis) from the datums dataframe
@@ -374,10 +378,10 @@ def plot_datums(data,fig,ax,canvas):
     # Isotope and other symbol/color is '*'/'k'
 
     # Setup standard markers and color schemes for plotting of datum symbols
-    stdMarkers    = [['F','^','^','x'],['N','D','D','x'],['R','d','d','x'],['D','8','8','x'],['M','s','s','x'], ['DN','p','p','x']]
+    stdMarkers    = [['F','^','^','x'],['N','D','D','x'],['R','d','d','x'],['D','8','8','x'],['M','s','s','x'],['DN','p','p','x']]
     stdBWColors   = [['F','k','k'],['N','k','k'],['R','k','k'],['D','k','k'],['M','k','k'],['DN','k','k']]
-    stdColors     = [['F','white','red'],['N','white','green'],['R','white','darkblue'],['D','white','#93B0CF'],['M','white','black'], ['DN','white','#A0522D']]
-    stdFillColors = [['F','red','red'],['N','green','green'],['R','darkblue','darkblue'],['D','#93B0CF','#93B0CF'],['M','black','black'], ['DN','#A0522D','#A0522D']]
+    stdColors     = [['F','white','red'],['N','white','green'],['R','white','darkblue'],['D','white','#93B0CF'],['M','white','black'],['DN','white','magenta']]
+    stdFillColors = [['F','red','red'],['N','green','green'],['R','darkblue','darkblue'],['D','#93B0CF','#93B0CF'],['M','black','black'],['DN','magenta','magenta']]
 
     # Map NSB Berlin event_type for datumType
     tops = ['ACME','DISP','LCO','TOP','T','Z']
@@ -648,7 +652,7 @@ def plot_datums(data,fig,ax,canvas):
     canvas.mpl_connect('pick_event', on_legend_pick)
 
     # Use AnnoteFinder to identify datums on plot
-    af =  AnnoteFinder(xdata, ydata, plotCodeID)
+    af = AnnoteFinder(xdata, ydata, plotCodeID)
     # Register the callback for AnnoteFinder
     #connect('button_press_event',af)
     canvas.mpl_connect('button_press_event',af)
@@ -789,6 +793,33 @@ def plot_title(holeID):
 
     title = 'Age Depth Plot for ' + holeID
     plt.title(title)
+
+def plot_metadata(xMin, xMax, yMin, yMax, data):
+    """Plot metadata."""
+    userName = data['userName']
+    stratFileName = data['stratFileName']
+    locFileName = data['locFileName']
+    # Plot userName, stratFileName, locFileName, and timestamp
+    # Get the current timestamp
+    stamp = datetime.datetime.now().strftime("%Y-%m-%d.%H.%M.%S")
+    # Strip path from stratFileName and plot
+    if '/' in stratFileName:
+        stratFileName = stratFileName[stratFileName.rfind('/')+1:]
+    plt.text(xMax,yMin - (abs(yMin)-abs(yMax))*.125,'Strat: ' + stratFileName,size=8., ha='right')
+    # Strip path from locFileName and plot
+    if '/' in locFileName:
+        locFileName = locFileName[locFileName.rfind('/')+1:]
+    # If locFileName plot
+    if (locFileName != ''):
+        plt.text(xMax,yMin - (abs(yMin)-abs(yMax))*.150,'LOC: ' + locFileName,size=8., ha='right')
+    # Plot initials derived from userName
+    initials = userName.split()
+    if (len(initials) < 2):
+        initials = userName
+    else:
+        initials = ''.join(name[0].upper() for name in userName.split())
+    plt.text(xMax,yMax + (abs(yMin)-abs(yMax))*.10,initials,size=8., ha='right')
+    plt.text(xMax,yMax + (abs(yMin)-abs(yMax))*.075,stamp,size=8., ha='right')
 
 def set_labels(labels):
     """Set axes values for plot."""
@@ -982,14 +1013,14 @@ def read_datums(parent,fileName, data):
     for row in r:
         n += 1
         if (n == 1): # Header
-            check_holeID = row[0]
+            check_holeID = row[0].upper()
             if check_holeID != data['holeID']:
                 parent.messageboard.WriteText("*** Wrong holeID: " + check_holeID + " ***\n")
                 parent.messageboard.WriteText("*** Skipping read strat file, will not plot ***\n")
                 return df
             #timescale = row[1] # Not used but for clarification on time scale ...
             data['fromScale'] = row[2] # Global fromScale for paleomag age conversions
-        if (n > 2): # Data
+        if n > 2  and len(row)>1 and not(row[0].startswith("#")): # Data
             d.append({'plot_fossil_group':row[0], 'datum_name':row[1],
                       'plot_code':row[2], 'datum_age_min_ma':row[3],
                       'datum_age_max_ma':row[4], 'top_depth':row[5],
@@ -1041,9 +1072,9 @@ def read_cores(parent,fileName,data):
     n = 0
     for row in r:
         n += 1
-        if (n == 1): # Extract global holeID
-            data['holeID'] = row[0]
-        if (n > 2): # Data lines
+        if n == 1: # Extract global holeID
+            data['holeID'] = row[0].upper()
+        if n > 2  and len(row)>1 and not(row[0].startswith("#")): # Data lines
             d.append({'core':int(row[0]), 'top_depth':float(row[1]),
                       'bottom_depth':float(row[2])})
     df = pd.DataFrame(d, columns = ['core', 'top_depth', 'bottom_depth'])
@@ -1060,12 +1091,12 @@ def read_paleomag_interval(parent,fileName):
         for row in r:
             n += 1
             if (n == 1): # Check that the holeID is the correct one
-                check_holeID = row[0]
+                check_holeID = row[0].upper()
                 if (check_holeID != holeID):
                     parent.messageboard.WriteText("*** Wrong PMAG holeID: " + check_holeID + " ***\n")
                     parent.messageboard.WriteText("*** Skipping read PMAG file, will not plot ***\n")
                     return df
-            if (n > 2): # Data lines
+            if n > 2  and len(row)>1 and not(row[0].startswith("#")): # Data lines
                 d.append({'top_depth':float(row[0]),
                           'bottom_depth':float(row[1]), 'color':int(row[2]),
                           'pattern':row[3], 'width':float(row[4])})
@@ -1087,14 +1118,14 @@ def read_loc(parent,fileName, data):
         for row in r:
             n += 1
             if (n == 1): # Check that the holeID is the correct one
-                check_holeID = row[0]
+                check_holeID = row[0].upper()
                 if (check_holeID != data['holeID']):
                     parent.messageboard.WriteText("*** Wrong LOC holeID: " + check_holeID + " ***\n")
                     parent.messageboard.WriteText("*** Skipping read LOC file, will not plot ***\n")
                     return df
                 #timeScale = row[1] # Time scale, e.g., Berg95
                 fromScale = row[1] # Paleomag chron scale, e.g., CK95
-            if (n > 2): # Data lines
+            if n > 2  and len(row)>1 and not(row[0].startswith("#")): # Data lines
                 d.append({'age_ma':float(row[0]), 'depth_mbsf':float(row[1])})
         df = pd.DataFrame(d, columns = ['age_ma', 'depth_mbsf'])
         for i in range(len(df)):
@@ -1164,6 +1195,7 @@ def save_plot(parent, holeID, fig): #Rewritten
     if dlg.ShowModal() == wx.ID_OK:
         fileName = dlg.GetPath()
         fig.savefig(fileName)
+        # plt.savefig(fileName)
     parent.messageboard.WriteText('saving figure to %s\n' % (fileName,))
 
 def project_events(parent, dfDATUMS,x,y):
@@ -1719,6 +1751,7 @@ class ADPFrame(wx.Frame):
                                   linestyle=self.linestyle, linewidth=self.linewidth, markersize=3, animated=False)
         # Plot hiatuses
         self.plot_hiatuses()
+        #plot_metadata(xMin, xMax, yMin, yMax, data)
         # Setup index for pick of a vertex
         self._ind = None
         # Setup callbacks
@@ -1818,6 +1851,7 @@ class ADPFrame(wx.Frame):
         self.line, = self.ax.plot(x, y, marker='s', markerfacecolor=self.color, color=self.color,
                                   linestyle=self.linestyle, linewidth=self.linewidth, markersize=3, animated=False)
         self.plot_hiatuses()
+        #plot_metadata(xMin, xMax, yMin, yMax, data)
         # Setup index for pick of a vertex
         self.canvas.draw()
 
@@ -2009,6 +2043,56 @@ class ADPFrame(wx.Frame):
 
         elif (event.key == 'x'): # Exit
             self.Quit(event)
+
+        elif (event.key == 'F' and locIdx > 0):  # First LOC in locList
+            set_locIdx(0)
+            self.ax.lines.remove(self.line) # remove the line currently plotting
+            x, y = zip(*locList[locIdx]) # re-create first LOC
+            self.line, = self.ax.plot(x, y, marker='s', markerfacecolor=self.color, color=self.color,
+                                      linestyle=self.linestyle, linewidth=self.linewidth, markersize=3, animated=False)
+            self.plot_hiatuses()
+            self.canvas.draw()
+
+        elif (event.key == 'N' and locIdx < (len(locList)-1)):  # Next LOC in locList
+            set_locIdx(locIdx + 1)
+            self.ax.lines.remove(self.line) # remove the line currently plotting
+            x, y = zip(*locList[locIdx]) # Next LOC
+            self.line, = self.ax.plot(x, y, marker='s', markerfacecolor=self.color, color=self.color,
+                                      linestyle=self.linestyle, linewidth=self.linewidth, markersize=3, animated=False)
+            self.plot_hiatuses()
+            self.canvas.draw()
+
+        elif (event.key == 'P' and locIdx > 0):  # Previous LOC in locList
+            set_locIdx(locIdx - 1)
+            self.ax.lines.remove(self.line) # remove the line currently plotting
+            x, y = zip(*locList[locIdx]) # Previous LOC
+            self.line, = self.ax.plot(x, y, marker='s', markerfacecolor=self.color, color=self.color,
+                                      linestyle=self.linestyle, linewidth=self.linewidth, markersize=3, animated=False)
+            self.plot_hiatuses()
+            self.canvas.draw()
+
+        elif (event.key == 'L' and locIdx != len(locList)-1):  # Last LOC in locList
+            set_locIdx(len(locList)-1)
+            self.ax.lines.remove(self.line) # remove the line currently plotting
+            x, y = zip(*locList[locIdx]) # Previous LOC
+            self.line, = self.ax.plot(x, y, marker='s', markerfacecolor=self.color, color=self.color,
+                                      linestyle=self.linestyle, linewidth=self.linewidth, markersize=3, animated=False)
+            self.plot_hiatuses()
+            self.canvas.draw()
+
+        elif (event.key == 'C' and len(locList) > 1 and locIdx < len(locList)-1):  # Crop to this LOC in locList
+            crop_loc(locIdx+1)
+            self.canvas.draw()
+
+        elif (event.key == 'D'): # Delete this LOC in locList
+            del_loc(locIdx)
+            self.ax.lines.remove(self.line) # remove the line currently plotting
+            x, y = zip(*locList[locIdx]) # Previous LOC
+            self.line, = self.ax.plot(x, y, marker='s', markerfacecolor=self.color, color=self.color,
+                                      linestyle=self.linestyle, linewidth=self.linewidth, markersize=3, animated=False)
+            self.plot_hiatuses()
+            self.canvas.draw
+
 
     def motion_notify_callback(self,event):
         '''on mouse movement'''
