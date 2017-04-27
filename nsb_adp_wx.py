@@ -27,7 +27,7 @@ def query_loc(engine,holeID): #Work
     """Query LOC from database."""
     # Query statement
     sqlLOC = """
-        SELECT leg,site,hole,hole_id,a.site_hole,age_ma,depth_mbsf * -1.
+        SELECT leg,site,hole,hole_id,a.site_hole,age_ma,depth_mbsf
         AS depth_mbsf,longitude,latitude
         FROM neptune_hole_summary a, neptune_age_model b
         WHERE a.site_hole = b.site_hole
@@ -63,19 +63,19 @@ def query_events(engine,data): #Work
         END AS datum_age_min_ma,
         CASE
             WHEN bottom_depth_mbsf IS NOT NULL THEN
-                bottom_depth_mbsf * -1.
+                bottom_depth_mbsf
             WHEN sample_bottom IS NOT NULL THEN
-                neptuneCoreDepth(top_hole_id,sample_bottom) * -1.
+                neptuneCoreDepth(top_hole_id,sample_bottom)
             ELSE
-                -9999.
+                9999.
         END AS bottom_depth,
         CASE
             WHEN top_depth_mbsf IS NOT NULL THEN
-                top_depth_mbsf * -1.
+                top_depth_mbsf
             WHEN sample_top IS NOT NULL THEN
-                neptuneCoreDepth(top_hole_id,sample_top) * -1.
+                neptuneCoreDepth(top_hole_id,sample_top)
             ELSE
-                -9999.
+                9999.
             END AS top_depth,
         calibration_scale AS scale,
         calibration_year,event_extent,a.event_id,event_synon_to,bottom_hole_id
@@ -97,19 +97,19 @@ def query_events(engine,data): #Work
         age_ma AS datum_age_min_ma,
         CASE
             WHEN bottom_depth_mbsf IS NOT NULL THEN
-                bottom_depth_mbsf * -1.
+                bottom_depth_mbsf
             WHEN sample_bottom IS NOT NULL THEN
-                neptuneCoreDepth(top_hole_id,sample_bottom) * -1.
+                neptuneCoreDepth(top_hole_id,sample_bottom)
             ELSE
-                -9999.
+                9999.
         END AS bottom_depth,
         CASE
             WHEN top_depth_mbsf IS NOT NULL THEN
                 top_depth_mbsf * -1.
             WHEN sample_top IS NOT NULL THEN
-                neptuneCoreDepth(top_hole_id,sample_top) * -1.
+                neptuneCoreDepth(top_hole_id,sample_top)
             ELSE
-                -9999.
+                9999.
             END AS top_depth,
         scale,
         9999 AS calibration_year,event_extent,a.event_id,
@@ -125,9 +125,9 @@ def query_events(engine,data): #Work
     dfDATUMS = psql.read_sql_query(sqlDATUM, engine)
     # Fix depths (null)
     for i in range(0,len(dfDATUMS)):
-        if dfDATUMS['top_depth'][i] == -9999.:
+        if dfDATUMS['top_depth'][i] == 9999.:
             dfDATUMS['top_depth'][i] = dfDATUMS['bottom_depth'][i]
-        elif dfDATUMS['bottom_depth'][i] == -9999.:
+        elif dfDATUMS['bottom_depth'][i] == 9999.:
             dfDATUMS['bottom_depth'][i] = dfDATUMS['top_depth'][i]
         dfDATUMS['datum_name'][i] = dfDATUMS['datum_name'][i].encode('utf-8')
     return dfDATUMS
@@ -135,8 +135,8 @@ def query_events(engine,data): #Work
 def query_cores(engine,holeID): #Work
     """Query for cores from database."""
     sqlCORE = """
-        SELECT core,core_top_mbsf * -1. AS top_depth,
-        (core_top_mbsf + core_length) * -1. AS bottom_depth,
+        SELECT core,core_top_mbsf AS top_depth,
+        (core_top_mbsf + core_length) AS bottom_depth,
         core_length AS core_length
         FROM neptune_core
         WHERE hole_id = '%s'
@@ -152,7 +152,7 @@ def query_cores(engine,holeID): #Work
 def query_paleomag_interval(engine,holeID): #Work
     """Query for paleomag intervals from database."""
     sqlPMAG = """
-        SELECT top_depth * -1. AS top_depth,bottom_depth * -1. AS bottom_depth,
+        SELECT top_depth AS top_depth,bottom_depth AS bottom_depth,
         color,pattern,width
         FROM neptune_hole_summary a, neptune_paleomag_interval b
         WHERE a.site_hole = b.site_hole
@@ -165,9 +165,9 @@ def query_paleomag_interval(engine,holeID): #Work
 def fix_null(t,fixType):
     """Fix missing values for depths."""
     if pd.isnull(t):
-        t = -9999.
+        t = 9999.
     elif type(t) == str and t.strip() == '':
-        t = -9999.
+        t = 9999.
     if fixType:  # Ages (fixType = 1), return a float value
         return float(t)
     else:
@@ -674,34 +674,34 @@ def plot_time_scale(dfTIME,xMin,xMax,yMin,yMax):
                 ageName[i] = 'Early'
 
     # Pad on y-axis
-    cHeight = abs((yMax - yMin)*.025)
-    yMaxPad = yMax + (abs(yMax - yMin)*.05)
+    cHeight = -abs((yMax - yMin)*.025)
+    yMinPad = yMin - (abs(yMax - yMin)*.05)
 
     # DEV: make a function to determine position relative to axes, and use
     # DEV: for stages and chrons, and...
     for i in range(0,len(dfTIME)):
         if (ageMinMa[i] >= xMin and ageMinMa[i] <= xMax and ageMaxMa[i] >= xMin and ageMaxMa[i] <= xMax) or (ageMinMa[i] < xMin and ageMaxMa[i] > xMin) or (ageMinMa[i] < xMax and ageMaxMa[i] > xMax):
             if ageLevel[i] == 'Epoch':
-                rectangle = plt.Rectangle((ageMinMa[i],yMaxPad-cHeight),ageMaxMa[i]-ageMinMa[i],cHeight,fc='none')
+                rectangle = plt.Rectangle((ageMinMa[i],yMinPad-cHeight),ageMaxMa[i]-ageMinMa[i],cHeight,fc='none')
                 plt.gca().add_patch(rectangle)
-                rectangle = plt.Rectangle((ageMinMa[i],yMaxPad-(cHeight*2.)),ageMaxMa[i]-ageMinMa[i],cHeight,fc='none')
+                rectangle = plt.Rectangle((ageMinMa[i],yMinPad-(cHeight*2.)),ageMaxMa[i]-ageMinMa[i],cHeight,fc='none')
                 plt.gca().add_patch(rectangle)
                 if ageMinMa[i] < xMin and ageName[i] != 'Holocene':
-                    plt.annotate(ageName[i],xy=((xMin+ageMaxMa[i])/2.,yMaxPad-(cHeight/2.)),size=9.,ha='center',va='center')
+                    plt.annotate(ageName[i],xy=((xMin+ageMaxMa[i])/2.,yMinPad-(cHeight/2.)),size=9.,ha='center',va='center')
                 elif ageMaxMa[i] > xMax and ageName[i] != 'Holocene':
-                    plt.annotate(ageName[i],xy=((xMax+ageMinMa[i])/2.,yMaxPad-(cHeight/2.)),size=9.,ha='center',va='center')
+                    plt.annotate(ageName[i],xy=((xMax+ageMinMa[i])/2.,yMinPad-(cHeight/2.)),size=9.,ha='center',va='center')
                 elif ageName[i] != 'Holocene':
-                    plt.annotate(ageName[i],xy=((ageMinMa[i]+ageMaxMa[i])/2.,yMaxPad-(cHeight/2.)),size=9.,ha='center',va='center')
+                    plt.annotate(ageName[i],xy=((ageMinMa[i]+ageMaxMa[i])/2.,yMinPad-(cHeight/2.)),size=9.,ha='center',va='center')
             elif ageLevel[i] == 'Subepoch':
             #elif (ageLevel[i] == 'Stage'): # DEV:  testing Stages, maybe an option?
-                rectangle = plt.Rectangle((ageMinMa[i],yMaxPad-(cHeight*2.)),ageMaxMa[i]-ageMinMa[i],cHeight,fc='none')
+                rectangle = plt.Rectangle((ageMinMa[i],yMinPad-(cHeight*2.)),ageMaxMa[i]-ageMinMa[i],cHeight,fc='none')
                 plt.gca().add_patch(rectangle)
                 if ageMinMa[i] < xMin:
-                    plt.annotate(ageName[i],xy=((xMin+ageMaxMa[i])/2.,yMaxPad-(cHeight*1.2)),size=8.,ha='center',va='top')
+                    plt.annotate(ageName[i],xy=((xMin+ageMaxMa[i])/2.,yMinPad-(cHeight*1.2)),size=8.,ha='center',va='top')
                 elif ageMaxMa[i] > xMax:
-                    plt.annotate(ageName[i],xy=((xMax+ageMinMa[i])/2.,yMaxPad-(cHeight*1.2)),size=8.,ha='center',va='top')
+                    plt.annotate(ageName[i],xy=((xMax+ageMinMa[i])/2.,yMinPad-(cHeight*1.2)),size=8.,ha='center',va='top')
                 else:
-                    plt.annotate(ageName[i],xy=((ageMinMa[i]+ageMaxMa[i])/2.,yMaxPad-(cHeight*1.2)),size=8.,ha='center',va='top')
+                    plt.annotate(ageName[i],xy=((ageMinMa[i]+ageMaxMa[i])/2.,yMinPad-(cHeight*1.2)),size=8.,ha='center',va='top')
 
 def plot_paleomag_interval(dfPMAGS,xMin,xMax,yMin,yMax):
     """Plot the pmag intervals."""
@@ -728,25 +728,25 @@ def plot_chrons(dfCHRONS,xMin,xMax,yMin,yMax):
     # DEV: current one being plotted ...
 
     # Calculate height of rectangle from Y axis range
-    cHeight = abs((yMax-yMin)*.025)
+    cHeight = -abs((yMax-yMin)*.025)
     for i in range(0,len(dfCHRONS)):
         if ((dfCHRONS['chron_age_min_ma'][i] >= xMin and dfCHRONS['chron_age_min_ma'][i] <= xMax
           and dfCHRONS['chron_age_max_ma'][i] >= xMin and dfCHRONS['chron_age_max_ma'][i] <= xMax)
           or (dfCHRONS['chron_age_min_ma'][i] <= xMin and dfCHRONS['chron_age_max_ma'][i] > xMin)
           or (dfCHRONS['chron_age_min_ma'][i] < xMax and dfCHRONS['chron_age_max_ma'][i] > xMax)):
             if dfCHRONS['chron_polarity_dir'][i] == None or pd.isnull(dfCHRONS['chron_polarity_dir'][i]): # None/NaN/NULL
-                rectangle = plt.Rectangle((dfCHRONS['chron_age_min_ma'][i],yMin-cHeight),dfCHRONS['chron_age_max_ma'][i]-dfCHRONS['chron_age_min_ma'][i],cHeight,fc='none')
+                rectangle = plt.Rectangle((dfCHRONS['chron_age_min_ma'][i],yMax-cHeight),dfCHRONS['chron_age_max_ma'][i]-dfCHRONS['chron_age_min_ma'][i],cHeight,fc='none')
                 plt.gca().add_patch(rectangle)
-                rectangle = plt.Rectangle((dfCHRONS['chron_age_min_ma'][i],yMin-(cHeight*2.)),dfCHRONS['chron_age_max_ma'][i]-dfCHRONS['chron_age_min_ma'][i],cHeight,fc='none')
+                rectangle = plt.Rectangle((dfCHRONS['chron_age_min_ma'][i],yMax-(cHeight*2.)),dfCHRONS['chron_age_max_ma'][i]-dfCHRONS['chron_age_min_ma'][i],cHeight,fc='none')
                 plt.gca().add_patch(rectangle)
                 if dfCHRONS['chron_age_min_ma'][i] < xMin:
-                    plt.annotate(dfCHRONS['chron_name'][i][1:],xy=((xMin+dfCHRONS['chron_age_max_ma'][i])/2.,yMin-(cHeight/2.)),size=6.,ha='center',va='center')
+                    plt.annotate(dfCHRONS['chron_name'][i][1:],xy=((xMin+dfCHRONS['chron_age_max_ma'][i])/2.,yMax-(cHeight/2.)),size=6.,ha='center',va='center')
                 elif dfCHRONS['chron_age_max_ma'][i] > xMax:
-                    plt.annotate(dfCHRONS['chron_name'][i][1:],xy=((xMax+dfCHRONS['chron_age_min_ma'][i])/2.,yMin-(cHeight/2.)),size=6.,ha='center',va='center')
+                    plt.annotate(dfCHRONS['chron_name'][i][1:],xy=((xMax+dfCHRONS['chron_age_min_ma'][i])/2.,yMax-(cHeight/2.)),size=6.,ha='center',va='center')
                 else:
-                    plt.annotate(dfCHRONS['chron_name'][i][1:],xy=((dfCHRONS['chron_age_min_ma'][i]+dfCHRONS['chron_age_max_ma'][i])/2.,yMin-(cHeight/2.)),size=6.,ha='center',va='center')
+                    plt.annotate(dfCHRONS['chron_name'][i][1:],xy=((dfCHRONS['chron_age_min_ma'][i]+dfCHRONS['chron_age_max_ma'][i])/2.,yMax-(cHeight/2.)),size=6.,ha='center',va='center')
             elif dfCHRONS['chron_polarity_dir'][i] == 'N': # Normal polarity
-                rectangle = plt.Rectangle((dfCHRONS['chron_age_min_ma'][i],yMin-(cHeight*2.)),dfCHRONS['chron_age_max_ma'][i]-dfCHRONS['chron_age_min_ma'][i],cHeight,fc='black')
+                rectangle = plt.Rectangle((dfCHRONS['chron_age_min_ma'][i],yMax-(cHeight*2.)),dfCHRONS['chron_age_max_ma'][i]-dfCHRONS['chron_age_min_ma'][i],cHeight,fc='black')
                 plt.gca().add_patch(rectangle)
 
 def plot_title(holeID):
@@ -996,15 +996,15 @@ def read_datums(parent,fileName, data):
         df['datum_name'][i] = df['datum_name'][i].strip()
         df['top_depth'][i] = df['top_depth'][i].strip()
         df['bottom_depth'][i] = fix_null(df['bottom_depth'][i],0)
-        if df['bottom_depth'][i] == -9999.:
+        if df['bottom_depth'][i] == 9999.:
             df['bottom_depth'][i] = df['top_depth'][i]
         df['top_depth'][i] = fix_null(df['top_depth'][i],0)
         df['bottom_depth'][i] = fix_null(df['bottom_depth'][i],0)
         df['datum_age_min_ma'][i] = fix_null(df['datum_age_min_ma'][i],1)
         df['datum_age_max_ma'][i] = fix_null(df['datum_age_max_ma'][i],1)
-        if df['datum_age_min_ma'][i] == -9999.:
+        if df['datum_age_min_ma'][i] == 9999.:
             df['datum_age_min_ma'][i] = df['datum_age_max_ma'][i]
-        elif df['datum_age_max_ma'][i] == -9999.:
+        elif df['datum_age_max_ma'][i] == 9999.:
             df['datum_age_max_ma'][i] = df['datum_age_min_ma'][i]
         if df['top_depth'][i].find('-') > 0:
             if df['top_depth'][i] == '0-0,0':
@@ -1012,11 +1012,11 @@ def read_datums(parent,fileName, data):
             else:
                 df['top_depth'][i] = calc_core_depth(df['top_depth'][i],data['dfCORES'])
         else:
-            df['top_depth'][i] = float(df['top_depth'][i]) * -1.
+            df['top_depth'][i] = float(df['top_depth'][i])
         if df['bottom_depth'][i].find('-') > 0:
             df['bottom_depth'][i] = calc_core_depth(df['bottom_depth'][i],data['dfCORES'])
         else:
-            df['bottom_depth'][i] = float(df['bottom_depth'][i]) * -1.
+            df['bottom_depth'][i] = float(df['bottom_depth'][i])
         datumType.append(df['plot_code'][i][0].upper())
     df['datum_type'] = datumType
     return df
@@ -1063,9 +1063,6 @@ def read_paleomag_interval(parent,fileName):
                           'pattern':row[3], 'width':float(row[4])})
         df = pd.DataFrame(d, columns = ['top_depth', 'bottom_depth',
                                         'color', 'pattern', 'width'])
-        for i in range(len(df)):
-            df['top_depth'][i] = df['top_depth'][i] * -1.
-            df['bottom_depth'][i] = df['bottom_depth'][i] * -1.
     return df
 
 def read_loc(parent,fileName, data):
@@ -1090,7 +1087,7 @@ def read_loc(parent,fileName, data):
                 d.append({'age_ma':float(row[0]), 'depth_mbsf':float(row[1])})
         df = pd.DataFrame(d, columns = ['age_ma', 'depth_mbsf'])
         for i in range(len(df)):
-            df['depth_mbsf'][i] = fix_null(df['depth_mbsf'][i],1) * -1.
+            df['depth_mbsf'][i] = fix_null(df['depth_mbsf'][i],1)
         if fromScale != data['toScale']:
             fromAgeDict = data['dfGPTS'][['event_id','age_ma']][data['dfGPTS'].scale == fromScale].to_dict('records')
             toAgeDict = data['dfGPTS'][['event_id','age_ma']][data['dfGPTS'].scale == data['toScale']].to_dict('records')
@@ -1103,12 +1100,12 @@ def read_loc(parent,fileName, data):
 def set_axes(parent, axes):
     """Set axes values for plot."""
     while 1:
-        new_axes = AxisDialog(axes)
+        new_axes = AxisDialog([axes[0], axes[1], axes[3], axes[2]])
         if new_axes.ShowModal()== wx.ID_OK:
             xmin = float(new_axes.xmin.GetValue())
             xmax = float(new_axes.xmax.GetValue())
-            ymin = float(new_axes.ymin.GetValue())
-            ymax = float(new_axes.ymax.GetValue())
+            ymax = float(new_axes.ymin.GetValue())
+            ymin = float(new_axes.ymax.GetValue())
             fieldValues = [xmin, xmax, ymin, ymax]
             if fieldValues is None:
                 fieldValues = axes
@@ -1610,8 +1607,6 @@ class ListEventsFrame(wx.Frame):
             fo.write("GROUP\tNAME\tPLOTCODE\tYOUNG AGE\tOLD AGE\tTOP DEPTH\tBOT DEPTH\n")
             list_data = data['dfDATUMS'].to_dict('records')
             for i in list_data:
-                i['top_depth'] = -1 * i['top_depth']
-                i['bottom_depth'] = -1 * i['bottom_depth']
                 fo.write( "%(plot_fossil_group)s\t%(datum_type)s %(datum_name)s\t%(plot_code)s\t%(datum_age_min_ma).3f\t%(datum_age_max_ma).3f\t%(top_depth).2f\t%(bottom_depth).2f\n" % i)
             fo.close()
 
@@ -1693,10 +1688,10 @@ class ADPFrame(wx.Frame):
         self.sizer.Add(self.canvas, 1, wx.LEFT | wx.TOP | wx.EXPAND)
         self.SetSizer(self.sizer)
         self.Fit()
-#        self.toolbar = NavigationToolbar2Wx(self.canvas)
-#        self.toolbar.Realize()
-#        self.sizer.Add(self.toolbar, 0, wx.LEFT | wx.EXPAND)
-#        self.toolbar.update()
+        self.toolbar = NavigationToolbar2Wx(self.canvas)
+        self.toolbar.Realize()
+        self.sizer.Add(self.toolbar, 0, wx.LEFT | wx.EXPAND)
+        self.toolbar.update()
         # Setup menubar
         self.menubar = ADP_Menubar(self)
         Save = wx.Menu()
@@ -1761,6 +1756,7 @@ class ADPFrame(wx.Frame):
     def replot(self,data,axes):
         plt.clf()
         plt.grid(self.has_grid) #Set grid or not depending on value of self.has_grid
+        plt.minorticks_on()
         # Plot
         self.xMin = max(axes[0],0)
         self.xMax = axes[1]
@@ -1768,7 +1764,8 @@ class ADPFrame(wx.Frame):
         self.yMax = axes[3]
         self.ax = self.fig.add_subplot(111)
         self.ax.set_xlim([self.xMin,self.xMax])
-        self.ax.set_ylim([self.yMin - (abs(self.yMax - self.yMin) * 0.05), self.yMax + (abs(self.yMax - self.yMin) * .05)])
+        self.ax.set_ylim([self.yMax + (abs(self.yMax - self.yMin) * .05), self.yMin - (abs(self.yMax - self.yMin) * 0.05)])
+        self.ax.tick_params(direction='out', which='both', right='off', top='off')
         #Plotting
         plt.rc('grid', linestyle=':', color='#7f7f7f', alpha=1) #Grid customization
         plt.rc('keymap', **self.keymap)
