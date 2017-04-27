@@ -1,3 +1,8 @@
+Version 0.3:
+	- Corrected unicode issue (that Pat already corrected, mea culpa)
+	- Added possibility to add or remove a grid.
+	- Simplified/Harmonized code.
+
 Version 0.2 (28/02/2017):
 	- Added possibility to load new stratigraphic events or a new LOC from file even if working with database data.
 	- User can now save biostratigraphic data to a file, in the Inspect Biostratigraphic Events dialog window.

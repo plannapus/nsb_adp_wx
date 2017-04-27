@@ -44,8 +44,6 @@ def query_loc(engine,holeID): #Work
 
 def query_events(engine,data): #Work
     """Query events from tables in NSB Berlin database."""
-    holeID = data['holeID']
-    toScale = data['toScale']
     sqlDATUM = """
         SELECT top_hole_id AS hole_id,event_group AS fossil_group,
         event_group AS plot_fossil_group,
@@ -84,7 +82,7 @@ def query_events(engine,data): #Work
         FROM neptune_event a, neptune_event_calibration b, neptune_event_def c
         WHERE a.event_id = b.event_id
         AND b.event_id = c.event_id
-        AND top_hole_id = '""" + holeID + """'
+        AND top_hole_id = '%s'
         AND (a.event_id,calibration_year) IN (
         SELECT DISTINCT event_id,MAX(calibration_year)
         AS calibration_year
@@ -122,14 +120,14 @@ def query_events(engine,data): #Work
         AND top_hole_id = '%s'
         AND scale = '%s'
         ORDER BY plot_fossil_group,datum_name
-    """ % (holeID, toScale)
+    """ % (data['holeID'], data['holeID'], data['toScale'])
     # Use Pandas to run query and retrieve a dataframe of the sql results
     dfDATUMS = psql.read_sql_query(sqlDATUM, engine)
     # Fix depths (null)
     for i in range(0,len(dfDATUMS)):
-        if (dfDATUMS['top_depth'][i] == -9999.):
+        if dfDATUMS['top_depth'][i] == -9999.:
             dfDATUMS['top_depth'][i] = dfDATUMS['bottom_depth'][i]
-        elif (dfDATUMS['bottom_depth'][i] == -9999.):
+        elif dfDATUMS['bottom_depth'][i] == -9999.:
             dfDATUMS['bottom_depth'][i] = dfDATUMS['top_depth'][i]
         dfDATUMS['datum_name'][i] = dfDATUMS['datum_name'][i].encode('utf-8')
     return dfDATUMS
@@ -147,8 +145,7 @@ def query_cores(engine,holeID): #Work
     dfCORES = psql.read_sql_query(sqlCORE,engine)
     dfCORES.core = dfCORES.core.astype(int)
     dfCORES = dfCORES.sort_values('core')
-    newIndex=range(0,len(dfCORES))
-    dfCORES['newIndex'] = newIndex
+    dfCORES['newIndex'] = range(0,len(dfCORES))
     dfCORES = dfCORES.set_index('newIndex')
     return dfCORES
 
@@ -167,11 +164,11 @@ def query_paleomag_interval(engine,holeID): #Work
 # FIX_ functions:
 def fix_null(t,fixType):
     """Fix missing values for depths."""
-    if (pd.isnull(t)):
+    if pd.isnull(t):
         t = -9999.
-    elif (type(t) == str and t.strip() == ''):
+    elif type(t) == str and t.strip() == '':
         t = -9999.
-    if (fixType):  # Ages (fixType = 1), return a float value
+    if fixType:  # Ages (fixType = 1), return a float value
         return float(t)
     else:
         return t
@@ -188,25 +185,25 @@ def calc_core_depth(origCore,dfCORES):
     """Calculate mbsf depth for cores (core-section,int)."""
     ccFlag = 0
     origCore = origCore.strip()
-    if (origCore[0] == '-'):
+    if origCore[0] == '-':
         origCore = origCore[1:]
-    if (origCore[0] == '?'):
+    if origCore[0] == '?':
         origCore = origCore[1:]
-    if (origCore.find('(') > 0):
+    if origCore.find('(') > 0:
         origCore = origCore[0:origCore.find('(')-1]
     coreIdx = int(origCore[0:origCore.find('-')])-1
     topDepth = dfCORES['top_depth'][coreIdx]
     botDepth = dfCORES['bottom_depth'][coreIdx]
     section = origCore[origCore.find('-')+1:]
-    if (section[0] == 'C'):  # Is this a core-catcher?
-        if (section.find(',') > 0):  # CC,int
+    if section[0] == 'C':  # Is this a core-catcher?
+        if section.find(',') > 0:  # CC,int
             topDepth = dfCORES['bottom_depth'][coreIdx]
             section = '1'
             ccFlag = 1
         else:
             depth = dfCORES['bottom_depth'][coreIdx]  # CC but not CC,int
             return abs(depth) * -1.
-    if (ccFlag == 0):
+    if ccFlag == 0:
         section = section[0:section.find(',')]
     interval = origCore[origCore.find(',')+1:]
     depth = topDepth + (int(section)-1) * 1.5 + .01 * float(interval)
@@ -215,14 +212,14 @@ def calc_core_depth(origCore,dfCORES):
 def calc_depth_ma(depth,x,y):
     """Calculate age from depth along LOC"""
     # DEV: what about event at hiatus depth?
-    if (depth < abs(y[0]) or depth > abs(y[len(y)-1])): # Outside of LOC range
+    if depth < abs(y[0]) or depth > abs(y[len(y)-1]): # Outside of LOC range
         return -999.
     i = 0
     while (depth >= abs(y[i])):
         i += 1
     ma = x[i-1]
     ratio = (depth - abs(y[i-1])) / (abs(y[i]) - abs(y[i-1]))
-    if (ratio > 0):
+    if ratio > 0:
         ma += ratio * (abs(x[i]) - abs(x[i-1]))
 
     return ma
@@ -245,9 +242,9 @@ def age_convert(age, fromScale, toScale):
 
     m = bisect_left(old, age)
 
-    if (m == 0):
+    if m == 0:
         n = new[0]
-    elif (m == len(fromScale)):
+    elif m == len(fromScale):
         n = new[-1]
     else:
         n = new[m-1] + (age - old[m-1])*(new[m]-new[m-1])/(old[m]-old[m-1])
@@ -313,26 +310,8 @@ def get_minmax_axes(ages,depths):
     yMin = math.floor((min(depths)/10.))*10
     yMax = math.ceil((max(depths)/10.))*10
 
-    # Check if user supplied axes arguments
-    # and replace values for min/max axes
-    # First initialize pxMin,pxMax
-    pxMin = -999.
-    pxMax = 999.
-
-    if (len(sys.argv) > 8):
-        pxMin = sys.argv[8]
-        pxMax = sys.argv[9]
-        pyMin = sys.argv[10]
-        pyMax = sys.argv[11]
-
-        xMin = float(pxMin)
-        xMax = float(pxMax)
-        # Now flip the y axes to negative
-        yMax = float(pyMin) * -1.
-        yMin = float(pyMax) * -1.
-
     # Check for too much padding on the x-axis
-    if (xMax-xMaxAge > 5. and xMax != float(pxMax)):
+    if xMax-xMaxAge > 5.:
         xMax = xMax - 5.
 
     # Place values into list and return
@@ -363,7 +342,6 @@ def plot_datums(data,fig,ax,canvas):
     dfDATUMS = data['dfDATUMS']
     plotGroups = data['plotGroups']
     plotCodes = data['plotCodes']
-    plotColorType = data['plotColorType']
 
     # Setup lists for using with AnnoteFinder
     xdata = []
@@ -388,11 +366,11 @@ def plot_datums(data,fig,ax,canvas):
     bases = ['BOT','REAP','FCO','EVOL','B']
 
     # plotColorType is passed in as argument
-    if (plotColorType == 1):  # B&W plot
+    if data['plotColorType'] == 1:  # B&W plot
         stdColors = stdBWColors
-    elif (plotColorType == 2):  # Color plot
+    elif data['plotColorType'] == 2:  # Color plot
         stdColors = stdColors
-    elif (plotColorType == 3):  # Color w/Fills plot
+    elif data['plotColorType'] == 3:  # Color w/Fills plot
         stdColors = stdFillColors
     else:
         stdColors = stdColors
@@ -409,26 +387,25 @@ def plot_datums(data,fig,ax,canvas):
         fossilGroup = dfDATUMS['plot_fossil_group'][i]
 
         datumType = dfDATUMS['datum_type'][i]
-        if (datumType in tops):
+        if datumType in tops:
             datumType = 'T'
-        elif (datumType in bases):
+        elif datumType in bases:
             datumType = 'B'
 
         # Match fossilGroup with plotGroups for controls for
         # plot,label,highlight ...
         for j in range(0,len(plotGroups)):
-            if (fossilGroup == plotGroups[j][0] and
-              datumType == plotGroups[j][4]):
+            if fossilGroup == plotGroups[j][0] and datumType == plotGroups[j][4]:
                 plotGroupIdx = j
 
         # Match datum fossil_group to stdMarkers fossil_group
         for j in range(0,len(stdMarkers)):
-            if (fossilGroup == stdMarkers[j][0]):
-                if (datumType == 'T'): # Top
+            if fossilGroup == stdMarkers[j][0]:
+                if datumType == 'T': # Top
                     marker = stdMarkers[j][1]
                     color  = stdColors[j][1]
                     fillstyle = 'top'
-                elif (datumType == 'B'): # Base
+                elif datumType == 'B': # Base
                     marker = stdMarkers[j][2]
                     color  = stdColors[j][2]
                     fillstyle = 'bottom'
@@ -437,17 +414,15 @@ def plot_datums(data,fig,ax,canvas):
                     color  = stdColors[j][2]  # Make same color as base
                     fillstyle = 'full'
                 lcolor = stdColors[j][2]  # Label color same as base
-            if (plotColorType == 2): # Override fillstyle for color (non-fill)
+            if data['plotColorType'] == 2: # Override fillstyle for color (non-fill)
                 fillstyle = 'full'
 
         # Calculate average depth and average age
-        avg_depth = (dfDATUMS['top_depth'][i] +
-                     dfDATUMS['bottom_depth'][i]) / 2.
-        avg_age = (dfDATUMS['datum_age_max_ma'][i] +
-                   dfDATUMS['datum_age_min_ma'][i]) / 2.
+        avg_depth = (dfDATUMS['top_depth'][i] + dfDATUMS['bottom_depth'][i]) / 2.
+        avg_age = (dfDATUMS['datum_age_max_ma'][i] + dfDATUMS['datum_age_min_ma'][i]) / 2.
 
         # Set the markersize
-        if (plotGroups[plotGroupIdx][3] == 1):
+        if plotGroups[plotGroupIdx][3] == 1:
             markersize = 9  # Highlight
         else:
             markersize = 7  # No highlight
@@ -457,12 +432,10 @@ def plot_datums(data,fig,ax,canvas):
         ydata.append(avg_depth)
         label = dfDATUMS['plot_code'][i] + ':' + dfDATUMS['datum_name'][i]
 
-        plotCodeID.append((dfDATUMS['plot_code'][i],dfDATUMS['datum_name'][i],
-                           lcolor))
+        plotCodeID.append((dfDATUMS['plot_code'][i],dfDATUMS['datum_name'][i], lcolor))
 
         # Plot range as box
-        if ((dfDATUMS['top_depth'][i] > dfDATUMS['bottom_depth'][i]) &
-           (dfDATUMS['datum_age_max_ma'][i] > dfDATUMS['datum_age_min_ma'][i])):
+        if dfDATUMS['top_depth'][i] > dfDATUMS['bottom_depth'][i] and dfDATUMS['datum_age_max_ma'][i] > dfDATUMS['datum_age_min_ma'][i]:
             xWidth = dfDATUMS['datum_age_max_ma'][i] - dfDATUMS['datum_age_min_ma'][i]
             yHeight = abs(dfDATUMS['top_depth'][i] - dfDATUMS['bottom_depth'][i])
             saveRangeBoxes.append([plotGroupIdx, fossilGroup+':'+datumType, dfDATUMS['datum_age_min_ma'][i], dfDATUMS['bottom_depth'][i], xWidth, yHeight, 'white'])
@@ -470,19 +443,19 @@ def plot_datums(data,fig,ax,canvas):
         # Annotate the datums with the plotCode
         # DEV: might fix this section to only use plotGroups ... either you
         # DEV: are plotting the symbol and the code, or else just the symbol ...
-        if (plotCodes == 1):
+        if plotCodes == 1:
             # DEV: testing box around label
             #plt.annotate(dfDATUMS['plot_code'][i], xy=(avg_age + 0.1, avg_depth),
             #                      size=8.,ha='left', color=lcolor, bbox=props)
             plt.annotate(dfDATUMS['plot_code'][i], xy=(avg_age + 0.1,avg_depth),
                                    size=7.,ha='left',color=lcolor)
-        elif (plotGroups[plotGroupIdx][2] == 1):
+        elif plotGroups[plotGroupIdx][2] == 1:
             plt.annotate(dfDATUMS['plot_code'][i],xy=(avg_age+0.1,avg_depth),
                          size=7.,ha='left',color=lcolor)
 
         # Plot range of depth
         # DEV: make plotting range of depth an option/toggle?
-        if (dfDATUMS['top_depth'][i] != dfDATUMS['bottom_depth'][i]):
+        if dfDATUMS['top_depth'][i] != dfDATUMS['bottom_depth'][i]:
             xline = []
             yline = []
             xline.append(avg_age)
@@ -497,7 +470,7 @@ def plot_datums(data,fig,ax,canvas):
 
         # Plot range of age
         # DEV: make plotting range of age an option/toggle?
-        if (dfDATUMS['datum_age_max_ma'][i] != dfDATUMS['datum_age_min_ma'][i]):
+        if dfDATUMS['datum_age_max_ma'][i] != dfDATUMS['datum_age_min_ma'][i]:
             xline = []
             yline = []
             xline.append(dfDATUMS['datum_age_max_ma'][i])
@@ -524,14 +497,14 @@ def plot_datums(data,fig,ax,canvas):
     dfGROUPS = pd.DataFrame(saveGroups, columns=headers)
 
     # If any of the datums had a range, save to a group for line toggling
-    if (len(saveRangeGroups) > 0):
+    if len(saveRangeGroups) > 0:
         headers = ['plotGroupIdx','rangeGroup', 'xline', 'yline', 'color']
         dfRangeGROUPS = pd.DataFrame(saveRangeGroups, columns=headers)
     else:
         dfRangeGROUPS = []
 
     # If any of the datums had a box range, save to a group for rectangle toggling
-    if (len(saveRangeBoxes) > 0):
+    if len(saveRangeBoxes) > 0:
         headers = ['plotGroupIdx','boxGroup', 'xmin', 'ymax', 'xWidth','yHeight', 'color']
         dfRangeBOXES = pd.DataFrame(saveRangeBoxes, columns=headers)
     else:
@@ -600,7 +573,7 @@ def plot_datums(data,fig,ax,canvas):
         legline.set_picker(5)  # 5 pts tolerance
         lined[legline] = origline
 
-    def on_legend_pick(event):
+    def on_legend_pick(event, lined): #De facto, does nothing
         """Match picked legend line to original line and toggle visibility."""
 
         legline = event.artist
@@ -621,27 +594,27 @@ def plot_datums(data,fig,ax,canvas):
         gid = origline.get_gid()
         for i in range(0,len(linesr)):
             theLine = linesr[i]
-            if (theLine.get_gid() == gid):
+            if theLine.get_gid() == gid:
                 theLine.set_visible(vis)
 
         # Match to range boxes, and toggle them too
         for i in range(0,len(boxesr)):
             theBox = boxesr[i]
-            if (theBox.get_gid() == gid):
+            if theBox.get_gid() == gid:
                 theBox.set_visible(vis)
 
         if vis:
             #legline.set_alpha(1.0)  # Doesn't help, markers not lines...
             # Set color of legend text to black (on)
             for i in range(0,len(ltexts)):
-                if (legLabel == ltexts[i].get_text()):
+                if legLabel == ltexts[i].get_text():
                     ltexts[i].set_color('black')
                     break
         else:
             #legline.set_alpha(0.1)  # Doesn't help, markers not lines...
             # Set color of legend text to red (off)
             for i in range(0,len(ltexts)):
-                if (legLabel == ltexts[i].get_text()):
+                if legLabel == ltexts[i].get_text():
                     ltexts[i].set_color('red')
                     break
 
@@ -649,7 +622,7 @@ def plot_datums(data,fig,ax,canvas):
 
     # Register the callback for picking a line legend
     #canvas = ax.figure.canvas
-    canvas.mpl_connect('pick_event', on_legend_pick)
+    canvas.mpl_connect('pick_event', lambda e:on_legend_pick(e, lined))
 
     # Use AnnoteFinder to identify datums on plot
     af = AnnoteFinder(xdata, ydata, plotCodeID)
@@ -667,8 +640,7 @@ def plot_cores(dfCORES,xMin,xMax,yMin,yMax):
     xline.append(xMax)
 
     for i in range(0,len(dfCORES)):
-        if (dfCORES['top_depth'][i] >= yMin and
-            dfCORES['bottom_depth'][i] <= yMax):
+        if dfCORES['top_depth'][i] >= yMin and dfCORES['bottom_depth'][i] <= yMax:
             cHeight = abs((dfCORES['bottom_depth'][i] - dfCORES['top_depth'][i]))
             rectangle = plt.Rectangle((xMax - cWidth, dfCORES['bottom_depth'][i]),
                                        cWidth, cHeight, fc='none')
@@ -694,11 +666,11 @@ def plot_time_scale(dfTIME,xMin,xMax,yMin,yMax):
     ageMaxMa = dfTIME['age_max_ma']
     for i in range(0,len(ageName)):
         # Extract and clean up ageName (Upper/Middle/Early)
-        if (ageLevel[i] == 'Subepoch'):
+        if ageLevel[i] == 'Subepoch':
             ageName[i] = ageName[i][ageName[i].find(' ') + 1:]
-            if (ageName[i] == 'Upper'):
+            if ageName[i] == 'Upper':
                 ageName[i] = 'Late'
-            elif (ageName[i] == 'Lower'):
+            elif ageName[i] == 'Lower':
                 ageName[i] = 'Early'
 
     # Pad on y-axis
@@ -708,27 +680,25 @@ def plot_time_scale(dfTIME,xMin,xMax,yMin,yMax):
     # DEV: make a function to determine position relative to axes, and use
     # DEV: for stages and chrons, and...
     for i in range(0,len(dfTIME)):
-        if ((ageMinMa[i] >= xMin and ageMinMa[i] <= xMax and ageMaxMa[i] >= xMin and ageMaxMa[i] <= xMax)
-            or (ageMinMa[i] < xMin and ageMaxMa[i] > xMin)
-            or (ageMinMa[i] < xMax and ageMaxMa[i] > xMax)):
-            if (ageLevel[i] == 'Epoch'):
+        if (ageMinMa[i] >= xMin and ageMinMa[i] <= xMax and ageMaxMa[i] >= xMin and ageMaxMa[i] <= xMax) or (ageMinMa[i] < xMin and ageMaxMa[i] > xMin) or (ageMinMa[i] < xMax and ageMaxMa[i] > xMax):
+            if ageLevel[i] == 'Epoch':
                 rectangle = plt.Rectangle((ageMinMa[i],yMaxPad-cHeight),ageMaxMa[i]-ageMinMa[i],cHeight,fc='none')
                 plt.gca().add_patch(rectangle)
                 rectangle = plt.Rectangle((ageMinMa[i],yMaxPad-(cHeight*2.)),ageMaxMa[i]-ageMinMa[i],cHeight,fc='none')
                 plt.gca().add_patch(rectangle)
-                if (ageMinMa[i] < xMin and ageName[i] != 'Holocene'):
+                if ageMinMa[i] < xMin and ageName[i] != 'Holocene':
                     plt.annotate(ageName[i],xy=((xMin+ageMaxMa[i])/2.,yMaxPad-(cHeight/2.)),size=9.,ha='center',va='center')
-                elif (ageMaxMa[i] > xMax and ageName[i] != 'Holocene'):
+                elif ageMaxMa[i] > xMax and ageName[i] != 'Holocene':
                     plt.annotate(ageName[i],xy=((xMax+ageMinMa[i])/2.,yMaxPad-(cHeight/2.)),size=9.,ha='center',va='center')
-                elif (ageName[i] != 'Holocene'):
+                elif ageName[i] != 'Holocene':
                     plt.annotate(ageName[i],xy=((ageMinMa[i]+ageMaxMa[i])/2.,yMaxPad-(cHeight/2.)),size=9.,ha='center',va='center')
-            elif (ageLevel[i] == 'Subepoch'):
+            elif ageLevel[i] == 'Subepoch':
             #elif (ageLevel[i] == 'Stage'): # DEV:  testing Stages, maybe an option?
                 rectangle = plt.Rectangle((ageMinMa[i],yMaxPad-(cHeight*2.)),ageMaxMa[i]-ageMinMa[i],cHeight,fc='none')
                 plt.gca().add_patch(rectangle)
-                if (ageMinMa[i] < xMin):
+                if ageMinMa[i] < xMin:
                     plt.annotate(ageName[i],xy=((xMin+ageMaxMa[i])/2.,yMaxPad-(cHeight*1.2)),size=8.,ha='center',va='top')
-                elif (ageMaxMa[i] > xMax):
+                elif ageMaxMa[i] > xMax:
                     plt.annotate(ageName[i],xy=((xMax+ageMinMa[i])/2.,yMaxPad-(cHeight*1.2)),size=8.,ha='center',va='top')
                 else:
                     plt.annotate(ageName[i],xy=((ageMinMa[i]+ageMaxMa[i])/2.,yMaxPad-(cHeight*1.2)),size=8.,ha='center',va='top')
@@ -741,7 +711,7 @@ def plot_paleomag_interval(dfPMAGS,xMin,xMax,yMin,yMax):
     intColor = dfPMAGS['color']
     for i in range(0,len(topDepth)):
         yHeight = abs(topDepth[i] - bottomDepth[i])
-        if (intColor[i] == 1):
+        if intColor[i] == 1:
             color='black'
         else:
             color='white'
@@ -764,41 +734,33 @@ def plot_chrons(dfCHRONS,xMin,xMax,yMin,yMax):
           and dfCHRONS['chron_age_max_ma'][i] >= xMin and dfCHRONS['chron_age_max_ma'][i] <= xMax)
           or (dfCHRONS['chron_age_min_ma'][i] <= xMin and dfCHRONS['chron_age_max_ma'][i] > xMin)
           or (dfCHRONS['chron_age_min_ma'][i] < xMax and dfCHRONS['chron_age_max_ma'][i] > xMax)):
-            if (dfCHRONS['chron_polarity_dir'][i] == None or pd.isnull(dfCHRONS['chron_polarity_dir'][i])): # None/NaN/NULL
+            if dfCHRONS['chron_polarity_dir'][i] == None or pd.isnull(dfCHRONS['chron_polarity_dir'][i]): # None/NaN/NULL
                 rectangle = plt.Rectangle((dfCHRONS['chron_age_min_ma'][i],yMin-cHeight),dfCHRONS['chron_age_max_ma'][i]-dfCHRONS['chron_age_min_ma'][i],cHeight,fc='none')
                 plt.gca().add_patch(rectangle)
                 rectangle = plt.Rectangle((dfCHRONS['chron_age_min_ma'][i],yMin-(cHeight*2.)),dfCHRONS['chron_age_max_ma'][i]-dfCHRONS['chron_age_min_ma'][i],cHeight,fc='none')
                 plt.gca().add_patch(rectangle)
-                if (dfCHRONS['chron_age_min_ma'][i] < xMin):
+                if dfCHRONS['chron_age_min_ma'][i] < xMin:
                     plt.annotate(dfCHRONS['chron_name'][i][1:],xy=((xMin+dfCHRONS['chron_age_max_ma'][i])/2.,yMin-(cHeight/2.)),size=6.,ha='center',va='center')
-                elif (dfCHRONS['chron_age_max_ma'][i] > xMax):
+                elif dfCHRONS['chron_age_max_ma'][i] > xMax:
                     plt.annotate(dfCHRONS['chron_name'][i][1:],xy=((xMax+dfCHRONS['chron_age_min_ma'][i])/2.,yMin-(cHeight/2.)),size=6.,ha='center',va='center')
                 else:
                     plt.annotate(dfCHRONS['chron_name'][i][1:],xy=((dfCHRONS['chron_age_min_ma'][i]+dfCHRONS['chron_age_max_ma'][i])/2.,yMin-(cHeight/2.)),size=6.,ha='center',va='center')
-            elif (dfCHRONS['chron_polarity_dir'][i] == 'N'): # Normal polarity
+            elif dfCHRONS['chron_polarity_dir'][i] == 'N': # Normal polarity
                 rectangle = plt.Rectangle((dfCHRONS['chron_age_min_ma'][i],yMin-(cHeight*2.)),dfCHRONS['chron_age_max_ma'][i]-dfCHRONS['chron_age_min_ma'][i],cHeight,fc='black')
                 plt.gca().add_patch(rectangle)
-
-def plot_axes_labels(data):
-    """Plot the axes labels."""
-    toScale = data['toScale']
-    data['xAxisLabel'] = 'Age (Ma) '+ toScale
-    data['yAxisLabel'] = 'Depth (mbsf)'
-    plt.xlabel(data['xAxisLabel'])
-    plt.ylabel(data['yAxisLabel'])
 
 def plot_title(holeID):
     """Plot the title."""
     global title
 
-    title = 'Age Depth Plot for ' + holeID
+    title = 'Age Depth Plot for Site ' + holeID
     plt.title(title)
 
 def plot_metadata(xMin, xMax, yMin, yMax, data):
     """Plot metadata."""
     userName = data['userName']
     stratFileName = data['stratFileName']
-    locFileName = data['locFileName']
+    locFileName = data['LOCFileName']
     # Plot userName, stratFileName, locFileName, and timestamp
     # Get the current timestamp
     stamp = datetime.datetime.now().strftime("%Y-%m-%d.%H.%M.%S")
@@ -810,11 +772,11 @@ def plot_metadata(xMin, xMax, yMin, yMax, data):
     if '/' in locFileName:
         locFileName = locFileName[locFileName.rfind('/')+1:]
     # If locFileName plot
-    if (locFileName != ''):
+    if locFileName != '':
         plt.text(xMax,yMin - (abs(yMin)-abs(yMax))*.150,'LOC: ' + locFileName,size=8., ha='right')
     # Plot initials derived from userName
     initials = userName.split()
-    if (len(initials) < 2):
+    if len(initials) < 2:
         initials = userName
     else:
         initials = ''.join(name[0].upper() for name in userName.split())
@@ -880,10 +842,9 @@ class AnnoteFinder: #Pat's code, largely untouched
           if self.axis is None or self.axis==event.inaxes:
             annotes = []
             for x,y,a in self.data:
-                if (clickX-self.xtol < x < clickX+self.xtol and
-                  clickY-self.ytol < y < clickY+self.ytol):
+                if clickX-self.xtol < x < clickX+self.xtol and clickY-self.ytol < y < clickY+self.ytol:
                     # DEV:  added button check
-                    if (event.button == 1 or event.button == 2):
+                    if event.button == 1 or event.button == 2:
                         a = a[0]+":"+a[2]  # For plot_code, plot_color
                         btn = event.button
                     else:
@@ -918,25 +879,25 @@ class AnnoteFinder: #Pat's code, largely untouched
             color  = annote[annote.rfind(':',0)+1:]
             annote = annote[0:annote.rfind(':',0)]
             #t = axis.text(x+.10,y,"%s (%6.3f, %8.3f)"%(annote,x,y),size=7.,color=color)
-            if (clickX <= x): # DEV: figure quadrant to post text
+            if clickX <= x: # DEV: figure quadrant to post text
                 xpos = x - .10
                 ha = 'right'
             else:
                 xpos = x + .10
                 ha = 'left'
-            if (clickY <= y):
+            if clickY <= y:
                 ypos = y - .10
-                if (idx == 0):
+                if idx == 0:
                     va = 'top'
                 else:
                     va = 'bottom'
             else:
                 ypos = y + .10
-                if (idx == 0):
+                if idx == 0:
                     va = 'bottom'
                 else:
                     va = 'top'
-            if (btn == 1):
+            if btn == 1:
                 t = axis.text(xpos,ypos,"%s"%(annote),size=7.,color=color,horizontalalignment=ha,verticalalignment=va)
             else:
                 t = axis.text(xpos,ypos,"%s (%6.3f, %8.3f)"%(annote,x,y),size=7.,color=color,horizontalalignment=ha,verticalalignment=va)
@@ -1012,7 +973,7 @@ def read_datums(parent,fileName, data):
     n = 0
     for row in r:
         n += 1
-        if (n == 1): # Header
+        if n == 1: # Header
             check_holeID = row[0].upper()
             if check_holeID != data['holeID']:
                 parent.messageboard.WriteText("*** Wrong holeID: " + check_holeID + " ***\n")
@@ -1035,24 +996,24 @@ def read_datums(parent,fileName, data):
         df['datum_name'][i] = df['datum_name'][i].strip()
         df['top_depth'][i] = df['top_depth'][i].strip()
         df['bottom_depth'][i] = fix_null(df['bottom_depth'][i],0)
-        if (df['bottom_depth'][i] == -9999.):
+        if df['bottom_depth'][i] == -9999.:
             df['bottom_depth'][i] = df['top_depth'][i]
         df['top_depth'][i] = fix_null(df['top_depth'][i],0)
         df['bottom_depth'][i] = fix_null(df['bottom_depth'][i],0)
         df['datum_age_min_ma'][i] = fix_null(df['datum_age_min_ma'][i],1)
         df['datum_age_max_ma'][i] = fix_null(df['datum_age_max_ma'][i],1)
-        if (df['datum_age_min_ma'][i] == -9999.):
+        if df['datum_age_min_ma'][i] == -9999.:
             df['datum_age_min_ma'][i] = df['datum_age_max_ma'][i]
-        elif (df['datum_age_max_ma'][i] == -9999.):
+        elif df['datum_age_max_ma'][i] == -9999.:
             df['datum_age_max_ma'][i] = df['datum_age_min_ma'][i]
-        if (df['top_depth'][i].find('-') > 0):
-            if (df['top_depth'][i] == '0-0,0'):
+        if df['top_depth'][i].find('-') > 0:
+            if df['top_depth'][i] == '0-0,0':
                 df['top_depth'][i] = 0.
             else:
                 df['top_depth'][i] = calc_core_depth(df['top_depth'][i],data['dfCORES'])
         else:
             df['top_depth'][i] = float(df['top_depth'][i]) * -1.
-        if (df['bottom_depth'][i].find('-') > 0):
+        if df['bottom_depth'][i].find('-') > 0:
             df['bottom_depth'][i] = calc_core_depth(df['bottom_depth'][i],data['dfCORES'])
         else:
             df['bottom_depth'][i] = float(df['bottom_depth'][i]) * -1.
@@ -1064,7 +1025,7 @@ def read_cores(parent,fileName,data):
     """Read cores file."""
     df = [ ] # Return empty if cancel on read
     parent.messageboard.WriteText('reading core data file\n')
-    if (fileName == '.'):
+    if fileName == '.':
         parent.messageboard.WriteText('no cores read\n')
         return df
     r = csv.reader(open(fileName,'rU'),delimiter='\t')
@@ -1084,15 +1045,15 @@ def read_paleomag_interval(parent,fileName):
     """Read PMAG intervals from file."""
     df = [ ] # Return empty if cancel on read
     parent.messageboard.WriteText('reading paleomag interval data file\n')
-    if (fileName != '.'):
+    if fileName != '.':
         r = csv.reader(open(fileName,'rU'),delimiter='\t')
         d = []
         n = 0
         for row in r:
             n += 1
-            if (n == 1): # Check that the holeID is the correct one
+            if n == 1: # Check that the holeID is the correct one
                 check_holeID = row[0].upper()
-                if (check_holeID != holeID):
+                if check_holeID != holeID:
                     parent.messageboard.WriteText("*** Wrong PMAG holeID: " + check_holeID + " ***\n")
                     parent.messageboard.WriteText("*** Skipping read PMAG file, will not plot ***\n")
                     return df
@@ -1111,15 +1072,15 @@ def read_loc(parent,fileName, data):
     """ Read LOC from file.""" # To extract from file for age conversions (paleomag scale)
     df = [] # Return empty if Cancel on read
     parent.messageboard.WriteText('reading LOC data file\n')
-    if (fileName != '.'): # Check for Cancel
+    if fileName != '.': # Check for Cancel
         r = csv.reader(open(fileName,'rU'),delimiter='\t')
         d = []
         n = 0
         for row in r:
             n += 1
-            if (n == 1): # Check that the holeID is the correct one
+            if n == 1: # Check that the holeID is the correct one
                 check_holeID = row[0].upper()
-                if (check_holeID != data['holeID']):
+                if check_holeID != data['holeID']:
                     parent.messageboard.WriteText("*** Wrong LOC holeID: " + check_holeID + " ***\n")
                     parent.messageboard.WriteText("*** Skipping read LOC file, will not plot ***\n")
                     return df
@@ -1139,32 +1100,28 @@ def read_loc(parent,fileName, data):
     return df
 
 #SET_ functions:
-
-def set_axes(axes):
+def set_axes(parent, axes):
     """Set axes values for plot."""
-    fieldNames = ["ageMin","ageMax","depthMin","depthMax"]
-    new_axes = AxisDialog(axes)
-    if new_axes.ShowModal()== wx.ID_OK:
-        xmin = float(new_axes.xmin.GetValue())
-        xmax = float(new_axes.xmax.GetValue())
-        ymin = float(new_axes.ymin.GetValue())
-        ymax = float(new_axes.ymax.GetValue())
-        fieldValues = [xmin, xmax, ymin, ymax]
-        while 1:
-            if (fieldValues == None):
+    while 1:
+        new_axes = AxisDialog(axes)
+        if new_axes.ShowModal()== wx.ID_OK:
+            xmin = float(new_axes.xmin.GetValue())
+            xmax = float(new_axes.xmax.GetValue())
+            ymin = float(new_axes.ymin.GetValue())
+            ymax = float(new_axes.ymax.GetValue())
+            fieldValues = [xmin, xmax, ymin, ymax]
+            if fieldValues is None:
                 fieldValues = axes
                 break
             errmsg = ""
-            for i in range(len(fieldNames)):
-                if fieldValues[0] >= fieldValues[1]:
-                    errmsg = 'ageMin should be < ageMax.\n'
-                if fieldValues[2] >= fieldValues[3]:
-                    errmsg = 'depthMin should be < depthMax.\n'
-            if (errmsg == ""): break
-            new_axes = AxisDialog(axes)
-        return fieldValues
-    else:
-        return axes
+            if fieldValues[0] >= fieldValues[1]: errmsg = 'ageMin should be < ageMax.\n'
+            if fieldValues[2] >= fieldValues[3]: errmsg = 'depthMin should be < depthMax.\n'
+            if errmsg == "": break
+            else: parent.messageboard.WriteText("Error: " + errmsg)
+        else:
+            fieldValues = axes
+            break
+    return fieldValues
 
 #SAVE_ functions:
 def save_loc(parent, holeID, x, y): #Rewritten
@@ -1266,9 +1223,9 @@ def convert_agescale_DB(data):
         minAge = data['dfDATUMS']['datum_age_min_ma'][i]
         origMaxAge.append(maxAge) # Save original
         origMinAge.append(minAge) # Save original
-        if (fromScale != toScale): # If the fromScale != toScale, convert age for every point ...
+        if fromScale != toScale: # If the fromScale != toScale, convert age for every point ...
             data['dfDATUMS']['datum_age_max_ma'][i] = float(str(round(age_convert(maxAge, fromAgeDict, toAgeDict),3)))
-            if (maxAge != minAge):
+            if maxAge != minAge:
                 data['dfDATUMS']['datum_age_min_ma'][i] = float(str(round(age_convert(minAge, fromAgeDict, toAgeDict),3)))
             else:
                 data['dfDATUMS']['datum_age_min_ma'][i] = data['dfDATUMS']['datum_age_max_ma'][i]
@@ -1287,9 +1244,9 @@ def convert_agescale_file(toScale, fromScale, dfGPTS, dfDATUMS):
         minAge = dfDATUMS['datum_age_min_ma'][i]
         origMaxAge.append(maxAge) # Save original
         origMinAge.append(minAge) # Save original
-        if (fromScale != toScale): # If the fromScale != toScale, convert age for every point ...
+        if fromScale != toScale: # If the fromScale != toScale, convert age for every point ...
             dfDATUMS['datum_age_max_ma'][i] = float(str(round(age_convert(maxAge, fromAgeDict, toAgeDict),3)))
-            if (maxAge != minAge):
+            if maxAge != minAge:
                 dfDATUMS['datum_age_min_ma'][i] = float(str(round(age_convert(minAge, fromAgeDict, toAgeDict),3)))
             else:
                 dfDATUMS['datum_age_min_ma'][i] = dfDATUMS['datum_age_max_ma'][i]
@@ -1682,51 +1639,24 @@ class ADPFrame(wx.Frame):
         # Setup axes
         axes = self.process_axes(data)
         # Plot
+        self.has_grid = False
         self.fig = plt.figure()
         self.messageboard.WriteText('plotting...\n')
         self.canvas = FigureCanvas(self, -1, self.fig)
-        self.ax = self.fig.add_subplot(111)
-        self.xMin = max(axes[0],0)
-        self.xMax = axes[1]
-        self.yMin = axes[2]
-        self.yMax = axes[3]
-        self.ax.set_xlim([self.xMin,self.xMax])
-        self.ax.set_ylim([self.yMin - (abs(self.yMax - self.yMin) * 0.05), self.yMax + (abs(self.yMax - self.yMin) * .05)])
-        #Plotting
-        if len(data['dfDATUMS']):
-            plot_datums(data,self.fig, self.ax, self.canvas)
-        if len(data['dfCORES']):
-            plot_cores(data['dfCORES'], self.xMin, self.xMax, self.yMin, self.yMax)
-        if len(data['dfTIME']):
-            plot_time_scale(data['dfTIME'], self.xMin, self.xMax, self.yMin, self.yMax)
-        if len(data['dfCHRONS']):
-            plot_chrons(data['dfCHRONS'], self.xMin, self.xMax, self.yMin, self.yMax)
-        if 'dfPMAGS' in data.keys():
-            plot_paleomag_interval(data['dfPMAGS'], self.xMin, self.xMax, self.yMin, self.yMax)
-        plot_axes_labels(data)
-        plot_title(data['holeID'])
         #Prepare LOC
-        locList = []
+        self.locList = []
         locData = []
         if len(data['dfLOC']) == 0:
             locData = [(self.xMin,self.yMax),(self.xMax,self.yMin)]
         else:
             for i in range(0,len(data['dfLOC'])):
                 locData.append((data['dfLOC']['age_ma'][i], data['dfLOC']['depth_mbsf'][i]))
-        locList.append(list(locData))
-        locIdx = 0
+        self.locList.append(list(locData))
+        self.locIdx = 0
         # Instantiate many variables
         self.showverts = True
         self.showHiatus = True
         self.epsilon = 5
-        self.locList = locList
-        self.locIdx = locIdx
-        toScale = data['toScale']
-        self.dfDATUMS = data['dfDATUMS']
-        self.plotGroups = data['plotGroups']
-        self.plotCodes = data['plotCodes']
-        self.plotColorType = data['plotColorType']
-        self.holeID = data['holeID']
         # Initialize for use later
         self.color = 'g'
         self.linestyle = '-'
@@ -1736,22 +1666,18 @@ class ADPFrame(wx.Frame):
         self.hlinewidth = 2.5
         self.hLines = []
         # For 'e' - Edit Labels
-        self.title = title
-        self.xAxisLabel = data['xAxisLabel']
-        self.yAxisLabel = data['yAxisLabel']
-        if (self.plotColorType == 1):
+        data['title'] = 'Age Depth Plot for Site ' + data['holeID']
+        data['xAxisLabel'] = 'Age (Ma) '+ data['toScale']
+        data['yAxisLabel'] = 'Depth (mbsf)'
+        if data['plotColorType'] == 1:
             self.color = 'k'
             self.linestyle = '--'
         else:
             self.color = 'g'
             self.linestyle = '-'
+        self.keymap = {'save':'', 'xscale':'', 'yscale':'', 'zoom':'', 'pan':'', 'home':''}
+        self.replot(data, axes)
         # Plot line of correlation
-        x, y = zip(*self.locList[self.locIdx])
-        self.line, = self.ax.plot(x, y, marker='s', markerfacecolor=self.color, color=self.color,
-                                  linestyle=self.linestyle, linewidth=self.linewidth, markersize=3, animated=False)
-        # Plot hiatuses
-        self.plot_hiatuses()
-        #plot_metadata(xMin, xMax, yMin, yMax, data)
         # Setup index for pick of a vertex
         self._ind = None
         # Setup callbacks
@@ -1767,10 +1693,10 @@ class ADPFrame(wx.Frame):
         self.sizer.Add(self.canvas, 1, wx.LEFT | wx.TOP | wx.EXPAND)
         self.SetSizer(self.sizer)
         self.Fit()
-        self.toolbar = NavigationToolbar2Wx(self.canvas)
-        self.toolbar.Realize()
-        self.sizer.Add(self.toolbar, 0, wx.LEFT | wx.EXPAND)
-        self.toolbar.update()
+#        self.toolbar = NavigationToolbar2Wx(self.canvas)
+#        self.toolbar.Realize()
+#        self.sizer.Add(self.toolbar, 0, wx.LEFT | wx.EXPAND)
+#        self.toolbar.update()
         # Setup menubar
         self.menubar = ADP_Menubar(self)
         Save = wx.Menu()
@@ -1783,8 +1709,8 @@ class ADPFrame(wx.Frame):
         Save4 = Save.Append(wx.ID_ANY, 'Inspect Stratigraphic data')
         Save5 = Save.Append(wx.ID_ANY, 'Project events on LOC')
         self.menubar.Append(Save, 'Plot')
-        self.Bind(wx.EVT_MENU, lambda event: save_plot(self, self.holeID, self.fig), Save1)
-        self.Bind(wx.EVT_MENU, lambda event: save_loc(self, self.holeID, self.line.get_data()[0], self.line.get_data()[1]), Save2)
+        self.Bind(wx.EVT_MENU, lambda event: save_plot(self, data['holeID'], self.fig), Save1)
+        self.Bind(wx.EVT_MENU, lambda event: save_loc(self, data['holeID'], self.line.get_data()[0], self.line.get_data()[1]), Save2)
         self.Bind(wx.EVT_MENU, lambda event: self.inspect_loc(self.line.get_data()[0], self.line.get_data()[1]), Save3)
         self.Bind(wx.EVT_MENU, lambda event: self.list_events(data), Save4)
         self.Bind(wx.EVT_MENU, lambda event: project_events(self,data['dfDATUMS'],self.line.get_data()[0], self.line.get_data()[1]), Save5)
@@ -1799,6 +1725,7 @@ class ADPFrame(wx.Frame):
         dlg = wx.FileDialog(None, 'Choose file', defaultDir =default, wildcard=wildcard, style=wx.FD_OPEN)
         if dlg.ShowModal() == wx.ID_OK:
             fileName = dlg.GetPath()
+            data['LOCfileName'] = fileName
             data['dfLOC'] = read_loc(self,fileName, data)
             locData = []
             if len(data['dfLOC']) == 0:
@@ -1818,13 +1745,22 @@ class ADPFrame(wx.Frame):
         if dlg.ShowModal() == wx.ID_OK:
             fileName = dlg.GetPath()
             new_data = read_datums(self,fileName, data)
-            new_data = convert_agescale_file(data['toScale'], data['fromScale'], data['dfGPTS'], new_data)
+            r = csv.reader(open(fileName,'rU'),delimiter='\t')
+            n = 0
+            for row in r:
+                if n == 0 :
+                    fromScale = row[2]
+                    n = 1
+                else: pass
+            data['stratFileName'] += " + " + fileName
+            new_data = convert_agescale_file(data['toScale'], fromScale, data['dfGPTS'], new_data)
             data['dfDATUMS'] = pd.concat([data['dfDATUMS'],new_data], ignore_index=True)
             axes = self.process_axes(data)
             self.replot(data, axes)
 
     def replot(self,data,axes):
         plt.clf()
+        plt.grid(self.has_grid) #Set grid or not depending on value of self.has_grid
         # Plot
         self.xMin = max(axes[0],0)
         self.xMax = axes[1]
@@ -1834,6 +1770,9 @@ class ADPFrame(wx.Frame):
         self.ax.set_xlim([self.xMin,self.xMax])
         self.ax.set_ylim([self.yMin - (abs(self.yMax - self.yMin) * 0.05), self.yMax + (abs(self.yMax - self.yMin) * .05)])
         #Plotting
+        plt.rc('grid', linestyle=':', color='#7f7f7f', alpha=1) #Grid customization
+        plt.rc('keymap', **self.keymap)
+        self.ax.set_axisbelow(True) #So that the grid is below the main elements
         if len(data['dfDATUMS']):
             plot_datums(data,self.fig, self.ax, self.canvas)
         if len(data['dfCORES']):
@@ -1844,8 +1783,9 @@ class ADPFrame(wx.Frame):
             plot_chrons(data['dfCHRONS'], self.xMin, self.xMax, self.yMin, self.yMax)
         if 'dfPMAGS' in data.keys():
             plot_paleomag_interval(data['dfPMAGS'], self.xMin, self.xMax, self.yMin, self.yMax)
-        plot_axes_labels(data)
-        plot_title(data['holeID'])
+        plt.xlabel(data['xAxisLabel'])
+        plt.ylabel(data['yAxisLabel'])
+        plt.title(data['title'])
         x, y = zip(*self.locList[self.locIdx])
         self.hLines = []
         self.line, = self.ax.plot(x, y, marker='s', markerfacecolor=self.color, color=self.color,
@@ -1871,16 +1811,16 @@ class ADPFrame(wx.Frame):
         d = np.sqrt((xt-event.x)**2 + (yt-event.y)**2)
         ind = d.argmin()
 
-        if (event.key == 'i'):  # Insert
+        if event.key == 'i':  # Insert
             return ind
 
-        if (event.key == 'd'):  # Delete
-            if (d[ind] >= self.epsilon):  # Check within epsilon distance
+        if event.key == 'd':  # Delete
+            if d[ind] >= self.epsilon:  # Check within epsilon distance
                 ind = None
             return ind
 
-        if (event.button):  # DEV: make a point was selected
-            if (d[ind] > self.epsilon):
+        if event.button:  # DEV: make a point was selected
+            if d[ind] > self.epsilon:
                 ind = None
 
         return ind
@@ -1921,7 +1861,7 @@ class ADPFrame(wx.Frame):
         if not event.inaxes:
             return
 
-        if (event.key == 't'): # Toggle visibility of the line
+        if event.key == 't': # Toggle visibility of the line
             self.showverts = not self.showverts
             self.line.set_visible(self.showverts)
             if not self.showverts: self._ind = None
@@ -1931,29 +1871,27 @@ class ADPFrame(wx.Frame):
                 setp(aLine, visible=self.showHiatus)
             self.canvas.draw()
 
-        elif (event.key =='i'): # Insert a vertex to the line
+        elif event.key =='i': # Insert a vertex to the line
             is_valid = 0 # reset every time ...
             ind = self.get_ind_under_point(event)
             x, y = self.line.get_data()
-            if (not type(x) is list): # First time convert np.array to list
+            if not type(x) is list: # First time convert np.array to list
                 x = x.tolist()
                 y = y.tolist()
-            if (event.xdata > x[ind]): # Check to adjust ind for insert position
+            if event.xdata > x[ind]: # Check to adjust ind for insert position
                 ind = ind + 1
             # Determine if valid position and insert or append vertex
-            if (event.xdata > x[len(x)-1] and event.ydata <= y[len(y)-1]):
+            if event.xdata > x[len(x)-1] and event.ydata <= y[len(y)-1]:
                 # Append after last point
                 x.append(event.xdata)
                 y.append(event.ydata)
                 is_valid = 1
-            elif (event.xdata < x[0] and event.ydata >= y[0]):
+            elif event.xdata < x[0] and event.ydata >= y[0]:
                 # Insert before first point
                 x.insert(0, event.xdata)
                 y.insert(0, event.ydata)
                 is_valid = 1
-            elif (ind <= (len(x)-1) and
-                  event.xdata < x[ind] and event.ydata >= y[ind] and
-                  event.xdata > x[ind-1] and event.ydata < y[ind-1]):
+            elif ind <= (len(x)-1) and event.xdata < x[ind] and event.ydata >= y[ind] and event.xdata > x[ind-1] and event.ydata < y[ind-1]:
                 # Insert point
                 x.insert(ind, event.xdata)
                 y.insert(ind, event.ydata)
@@ -1962,7 +1900,7 @@ class ADPFrame(wx.Frame):
             # DEV:  don't set the line, you are going to remove and plot the new one ...
             #self.line.set_data(x, y)
 
-            if (is_valid): # was it a valid insert?
+            if is_valid: # was it a valid insert?
                 self.new_loc(x, y) # add a new LOC to locList
 
                 self.ax.lines.remove(self.line) # remove the line currently plotting
@@ -1975,11 +1913,11 @@ class ADPFrame(wx.Frame):
                 self.plot_hiatuses()
                 self.canvas.draw()
 
-        elif (event.key == 'd'): # Delete a vertex of the line
+        elif event.key == 'd': # Delete a vertex of the line
             ind = self.get_ind_under_point(event)
-            if (ind is not None):
+            if ind is not None:
                 x, y = self.line.get_data()
-                if (not type(x) is list):
+                if not type(x) is list:
                     x = x.tolist()
                     y = y.tolist()
                 # Remove x and y from list at ind
@@ -1999,52 +1937,53 @@ class ADPFrame(wx.Frame):
                 self.plot_hiatuses()
                 self.canvas.draw()
 
-        elif (event.key == 's'): # Save LOC to file
+        elif event.key == 's': # Save LOC to file
             x, y = self.line.get_data()
             save_loc(self, self.holeID, x, y)
 
-        elif (event.key == 'I'): # Inspect LOC
+        elif event.key == 'I': # Inspect LOC
             x, y = self.line.get_data()
             self.inspect_loc(x, y)
 
-        elif (event.key == 'p'): # Save plot to file
+        elif event.key == 'p': # Save plot to file
             save_plot(self, self.holeID, self.fig)
 
-        elif (event.key == 'l'):  # List events
+        elif event.key == 'l':  # List events
             #ListEventsFrame(None,data)
             self.list_events(data)
 
-        elif (event.key == 'c'): # Project events
+        elif event.key == 'c': # Project events
             x, y = self.line.get_data()
             project_events(self,data['dfDATUMS'], x, y)
 
-        elif (event.key == 'a'): # Set axes
+        elif event.key == 'a': # Set axes
             axes = [self.xMin,self.xMax,self.yMin,self.yMax]
-            newAxes = set_axes(axes)
+            newAxes = set_axes(self,axes)
             self.messageboard.WriteText('new axis:\nxMin=%.2f, xMax=%.2f, yMin=%.2f, yMax=%.2f\n' % (self.xMin, self.xMax, self.yMin, self.yMax))
             self.replot(data,newAxes)
 
-        elif (event.key == 'e'): # Edit title and/or axes labels
-            labels = [self.title,self.xAxisLabel,self.yAxisLabel]
-            labels = set_labels(labels)
-            self.title = labels[0]
-            self.xAxisLabel = labels[1]
-            self.yAxisLabel = labels[2]
-            plt.title(self.title)
-            plt.xlabel(self.xAxisLabel)
-            plt.ylabel(self.yAxisLabel)
+        elif event.key == 'g':
+            self.has_grid = not self.has_grid
+            self.replot(data,[self.xMin,self.xMax,self.yMin,self.yMax])
+
+        elif event.key == 'e': # Edit title and/or axes labels
+            labels = set_labels([data['title'],data['xAxisLabel'],data['yAxisLabel']])
+            data['title'], data['xAxisLabel'], data['yAxisLabel']  = labels
+            plt.title(data['title'])
+            plt.xlabel(data['xAxisLabel'])
+            plt.ylabel(data['yAxisLabel'])
             self.canvas.draw()
 
-        elif (event.key == 'h'): # Plot Help
-            self.PIH()
+        elif event.key == 'h': # Plot Help
+            self.PIH(event)
 
-        elif (event.key == 'H'): # Program Help
-            self.Help()
+        elif event.key == 'H': # Program Help
+            self.Help(event)
 
-        elif (event.key == 'x'): # Exit
+        elif event.key == 'x': # Exit
             self.Quit(event)
 
-        elif (event.key == 'F' and locIdx > 0):  # First LOC in locList
+        elif event.key == 'F' and locIdx > 0:  # First LOC in locList
             set_locIdx(0)
             self.ax.lines.remove(self.line) # remove the line currently plotting
             x, y = zip(*locList[locIdx]) # re-create first LOC
@@ -2053,7 +1992,7 @@ class ADPFrame(wx.Frame):
             self.plot_hiatuses()
             self.canvas.draw()
 
-        elif (event.key == 'N' and locIdx < (len(locList)-1)):  # Next LOC in locList
+        elif event.key == 'N' and locIdx < (len(locList)-1):  # Next LOC in locList
             set_locIdx(locIdx + 1)
             self.ax.lines.remove(self.line) # remove the line currently plotting
             x, y = zip(*locList[locIdx]) # Next LOC
@@ -2062,7 +2001,7 @@ class ADPFrame(wx.Frame):
             self.plot_hiatuses()
             self.canvas.draw()
 
-        elif (event.key == 'P' and locIdx > 0):  # Previous LOC in locList
+        elif event.key == 'P' and locIdx > 0:  # Previous LOC in locList
             set_locIdx(locIdx - 1)
             self.ax.lines.remove(self.line) # remove the line currently plotting
             x, y = zip(*locList[locIdx]) # Previous LOC
@@ -2071,7 +2010,7 @@ class ADPFrame(wx.Frame):
             self.plot_hiatuses()
             self.canvas.draw()
 
-        elif (event.key == 'L' and locIdx != len(locList)-1):  # Last LOC in locList
+        elif event.key == 'L' and locIdx != len(locList)-1:  # Last LOC in locList
             set_locIdx(len(locList)-1)
             self.ax.lines.remove(self.line) # remove the line currently plotting
             x, y = zip(*locList[locIdx]) # Previous LOC
@@ -2080,11 +2019,11 @@ class ADPFrame(wx.Frame):
             self.plot_hiatuses()
             self.canvas.draw()
 
-        elif (event.key == 'C' and len(locList) > 1 and locIdx < len(locList)-1):  # Crop to this LOC in locList
+        elif event.key == 'C' and len(locList) > 1 and locIdx < len(locList)-1:  # Crop to this LOC in locList
             crop_loc(locIdx+1)
             self.canvas.draw()
 
-        elif (event.key == 'D'): # Delete this LOC in locList
+        elif event.key == 'D': # Delete this LOC in locList
             del_loc(locIdx)
             self.ax.lines.remove(self.line) # remove the line currently plotting
             x, y = zip(*locList[locIdx]) # Previous LOC
@@ -2102,14 +2041,14 @@ class ADPFrame(wx.Frame):
         if event.inaxes is None: return
         if event.button != 1: return
         x,y = self.line.get_data()
-        if (not type(x) is list):
+        if not type(x) is list:
             x = x.tolist()
             y = y.tolist()
 
         # DEV: determine boundaries for moving a point
         # DEV: first point, make xBounds to x axis min, y axis max
         # DEV: modified code from Neptune ADP (Java)...
-        if (self._ind == 0):
+        if self._ind == 0:
             xBound0 = self.xMin
             yBound0 = self.yMax
         else:
@@ -2117,7 +2056,7 @@ class ADPFrame(wx.Frame):
             xBound0 = x[self._ind - 1]
             yBound0 = y[self._ind - 1]
 
-        if (self._ind == len(x) - 1): # Last point
+        if self._ind == len(x) - 1: # Last point
             xBound1 = self.xMax
             yBound1 = self.yMin
         else:
@@ -2125,15 +2064,15 @@ class ADPFrame(wx.Frame):
             yBound1 = y[self._ind + 1]
 
         # Don't exceed x boundaries
-        if (event.xdata < xBound0):
+        if event.xdata < xBound0:
             event.xdata = xBound0
-        elif (event.xdata > xBound1):
+        elif event.xdata > xBound1:
             event.xdata = xBound1
 
         # Don't exceed y boundaries
-        if (event.ydata > yBound0):
+        if event.ydata > yBound0:
             event.ydata = yBound0
-        elif (event.ydata < yBound1):
+        elif event.ydata < yBound1:
             event.ydata = yBound1
 
         x[self._ind] = event.xdata
@@ -2164,14 +2103,14 @@ class ADPFrame(wx.Frame):
 
         # Get the current LOC to test for hiatuses
         x, y = self.line.get_data()
-        if (not type(x) is list): # First time convert np.array to list
+        if not type(x) is list: # First time convert np.array to list
             x = x.tolist()
             y = y.tolist()
 
         # Check for hiatuses and plot
         for i in range (0,len(x)-1): # Check x(age) at different y(depth)
             #if ((abs(y[i+1])-abs(y[i]) == 0.) or (abs(y[i+1])-abs(y[i]))/(x[i+1]-x[i]) <= 1.): # <=1meter/ma accumulation
-            if ((abs(y[i+1])-abs(y[i]) == 0.) or (abs(y[i+1])-abs(y[i]))/(x[i+1]-x[i]) <= 0.5): # <=0.5meter/ma accumulation
+            if (abs(y[i+1])-abs(y[i]) == 0.) or (abs(y[i+1])-abs(y[i]))/(x[i+1]-x[i]) <= 0.5: # <=0.5meter/ma accumulation
                 xh = [x[i], x[i+1]]
                 yh = [y[i], y[i+1]]
 
@@ -2183,13 +2122,13 @@ class ADPFrame(wx.Frame):
 
                 self.hlinewidth = 2.5
 
-                if (self.plotColorType == 1): # Black & White plot
+                if data['plotColorType'] == 1: # Black & White plot
                     self.hcolor = 'k'
                     self.hlinestyle = ':'
                 else: # Color plot
                     self.hcolor = 'r'
                     self.hlinestyle = ':'
-                if (y[i] != y[i+1]): # Almost a hiatus - alert user
+                if y[i] != y[i+1]: # Almost a hiatus - alert user
 
                     # DEV:  if you are this close, make the depth values the same (snap) ...
                     # DEV:  depends on which point ...
@@ -2262,10 +2201,10 @@ class ADPFrame(wx.Frame):
         setAxes = data['setAxes']
         ages   = get_minmax_ages_datum(dfDATUMS)
         depths = get_minmax_depths_datum(dfDATUMS)
-        if (len(dfLOC) != 0):
+        if len(dfLOC) != 0:
             ages  = get_minmax_ages_loc(dfLOC,ages)
             depths = get_minmax_depths_loc(dfLOC,depths)
-        if (len(dfCORES) != 0):
+        if len(dfCORES) != 0:
             depths = get_minmax_depths_cores(dfCORES,depths)
         axes = get_minmax_axes(ages,depths)
         xMin = axes[0]
@@ -2273,9 +2212,9 @@ class ADPFrame(wx.Frame):
         yMin = axes[2]
         yMax = axes[3]
         self.messageboard.WriteText('calculated axis:\nxMin=%.2f, xMax=%.2f, yMin=%.2f, yMax=%.2f\n' % (xMin, xMax, yMin, yMax))
-        if (setAxes == 1):
+        if setAxes == 1:
             axes = [xMin,xMax,yMin,yMax] # ints, and positive
-            newAxes = set_axes(axes)
+            newAxes = set_axes(self,axes)
             xMin = float(newAxes[0])
             xMax = float(newAxes[1])
             yMin = float(newAxes[2])
@@ -2375,15 +2314,18 @@ class WelcomeFrame(wx.Frame):
                             data['dfPMAGS'] = query_paleomag_interval(engine,data['holeID'])
                             data['holeID'] = re.split('_',data['holeID'])[1]
                             data['dfDATUMS'] = convert_agescale_DB(data)
+                            data['stratFileName'] = data['LOCFileName'] = "NSB"
             else: # If data taken from files
                 files = GetFilesDialog(self, data= data) # Open the file selection dialog window
                 if files.ShowModal() == wx.ID_OK: # When OK clicked, read those files accordingly
+                    data['stratFileName'] = files.stratfile.GetValue()
                     data['dfCORES'] = read_cores(self,files.corefile.GetValue(), data)
-                    data['dfDATUMS'] = read_datums(self,files.stratfile.GetValue(), data)
+                    data['dfDATUMS'] = read_datums(self, data['stratFileName'], data)
                     data['dfCORES'] = fix_cores(data['dfCORES'])
                     if data['plotPMAG'] == 1: data['dfPMAGS'] = read_paleomag_interval(self,files.pmagfile.GetValue())
                     if data['plotLOC'] == 1:
-                        data['dfLOC'] = read_loc(self,files.locfile.GetValue(), data)
+                        data['LOCFileName'] = files.locfile.GetValue()
+                        data['dfLOC'] = read_loc(self,data['LOCFileName'], data)
                     else:
                         data['dfLOC'] = []
                     data['dfDATUMS'] = convert_agescale_file(data['toScale'], data['fromScale'], data['dfGPTS'], data['dfDATUMS'])
@@ -2399,12 +2341,6 @@ if __name__ == '__main__':
     matplotlib.rcParams['legend.numpoints'] = 2
     matplotlib.rcParams['legend.fontsize'] = 'small'
     matplotlib.rcParams['savefig.dpi'] = 400
-    matplotlib.rcParams['keymap.save'] = ''
-    matplotlib.rcParams['keymap.xscale'] = ''
-    matplotlib.rcParams['keymap.yscale'] = ''
-    matplotlib.rcParams['keymap.zoom'] = ''
-    matplotlib.rcParams['keymap.pan'] = ''
-    matplotlib.rcParams['keymap.home'] = ''
     pd.options.mode.chained_assignment = None
     # Find appropriate path to folders:
     if getattr(sys, 'frozen', False):
