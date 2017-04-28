@@ -749,11 +749,11 @@ def plot_title(holeID):
     title = 'Age Depth Plot for Site ' + holeID
     plt.title(title)
 
-def plot_metadata(xMin, xMax, yMin, yMax, data):
+def plot_metadata(parent, xMin, xMax, yMin, yMax, data):
     """Plot metadata."""
     userName = data['user']
     stratFileName = data['stratFileName']
-    locFileName = data['LOCFileName']
+    locFileName = data['LOCFileName'][parent.locIdx] if type(data['LOCFileName']) is list else data['LOCFileName']
     # Plot userName, stratFileName, locFileName, and timestamp
     # Get the current timestamp
     stamp = datetime.datetime.now().strftime("%Y-%m-%d.%H.%M.%S")
@@ -1721,7 +1721,6 @@ class ADPFrame(wx.Frame):
         dlg = wx.FileDialog(None, 'Choose file', defaultDir =default, wildcard=wildcard, style=wx.FD_OPEN)
         if dlg.ShowModal() == wx.ID_OK:
             fileName = dlg.GetPath()
-            data['LOCfileName'] = fileName
             data['dfLOC'] = read_loc(self,fileName, data)
             locData = []
             if len(data['dfLOC']) == 0:
@@ -1729,11 +1728,13 @@ class ADPFrame(wx.Frame):
             else:
                 for i in range(0,len(data['dfLOC'])):
                     locData.append((data['dfLOC']['age_ma'][i], data['dfLOC']['depth_mbsf'][i]))
-            #self.locList.append(list(locData))
-            #self.locIdx += 1
-            self.locList = []
             self.locList.append(list(locData))
-            self.locIdx = 0
+            self.locIdx += 1
+            #self.locList = []
+            #self.locList.append(list(locData))
+            #self.locIdx = 0
+            if type(data['LOCFileName']) is list: data['LOCFileName'] += fileName
+            else: data['LOCFileName'] = [data['LOCFileName'], fileName]
             axes = self.process_axes(data)
             self.replot(data,axes)
 
@@ -1792,7 +1793,7 @@ class ADPFrame(wx.Frame):
         self.line, = self.ax.plot(x, y, marker='s', markerfacecolor=self.color, color=self.color,
                                   linestyle=self.linestyle, linewidth=self.linewidth, markersize=3, animated=False)
         self.plot_hiatuses()
-        plot_metadata(self.xMin, self.xMax, self.yMin, self.yMax, data)
+        plot_metadata(self, self.xMin, self.xMax, self.yMin, self.yMax, data)
         # Setup index for pick of a vertex
         self.canvas.draw()
 
@@ -2051,7 +2052,7 @@ class ADPFrame(wx.Frame):
         # DEV: modified code from Neptune ADP (Java)...
         if self._ind == 0:
             xBound0 = self.xMin
-            yBound0 = self.yMax
+            yBound0 = self.yMin
         else:
             # Previous point
             xBound0 = x[self._ind - 1]
@@ -2059,7 +2060,7 @@ class ADPFrame(wx.Frame):
 
         if self._ind == len(x) - 1: # Last point
             xBound1 = self.xMax
-            yBound1 = self.yMin
+            yBound1 = self.yMax
         else:
             xBound1 = x[self._ind + 1] # Next point
             yBound1 = y[self._ind + 1]
