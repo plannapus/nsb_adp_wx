@@ -635,19 +635,19 @@ def plot_cores(dfCORES,xMin,xMax,yMin,yMax):
     for i in range(0,len(dfCORES)):
         if dfCORES['top_depth'][i] >= yMin and dfCORES['bottom_depth'][i] <= yMax:
             cHeight = abs((dfCORES['bottom_depth'][i] - dfCORES['top_depth'][i]))
-            rectangle = plt.Rectangle((xMax - cWidth, dfCORES['bottom_depth'][i]),
+            rectangle = plt.Rectangle((xMax - cWidth, dfCORES['top_depth'][i]),
                                        cWidth, cHeight, fc='none')
             plt.gca().add_patch(rectangle)
             plt.annotate(dfCORES['core'][i],xy=(xMax -cWidth / 2.,
-                         dfCORES['top_depth'][i] - (cHeight / 2.)), size=6.,
+                         dfCORES['top_depth'][i] + (cHeight / 2.)), size=6.,
                          ha='center', va='center')
             # Plot the section subdivisions
             sections = int(abs((dfCORES['top_depth'][i] -
                                 dfCORES['bottom_depth'][i]) / 1.5))
             for j in range(1,sections+1):
                 yline=[]
-                yline.append(dfCORES['top_depth'][i] - j * 1.5)
-                yline.append(dfCORES['top_depth'][i] - j * 1.5)
+                yline.append(dfCORES['top_depth'][i] + j * 1.5)
+                yline.append(dfCORES['top_depth'][i] + j * 1.5)
                 plt.plot(xline, yline, 'r-', linewidth=1.0)
 
 def plot_time_scale(dfTIME,xMin,xMax,yMin,yMax):
@@ -1729,8 +1729,11 @@ class ADPFrame(wx.Frame):
             else:
                 for i in range(0,len(data['dfLOC'])):
                     locData.append((data['dfLOC']['age_ma'][i], data['dfLOC']['depth_mbsf'][i]))
+            #self.locList.append(list(locData))
+            #self.locIdx += 1
+            self.locList = []
             self.locList.append(list(locData))
-            self.locIdx += 1
+            self.locIdx = 0
             axes = self.process_axes(data)
             self.replot(data,axes)
 
@@ -1879,17 +1882,17 @@ class ADPFrame(wx.Frame):
             if event.xdata > x[ind]: # Check to adjust ind for insert position
                 ind = ind + 1
             # Determine if valid position and insert or append vertex
-            if event.xdata > x[len(x)-1] and event.ydata <= y[len(y)-1]:
+            if event.xdata > x[len(x)-1] and event.ydata >= y[len(y)-1]:
                 # Append after last point
                 x.append(event.xdata)
                 y.append(event.ydata)
                 is_valid = 1
-            elif event.xdata < x[0] and event.ydata >= y[0]:
+            elif event.xdata < x[0] and event.ydata <= y[0]:
                 # Insert before first point
                 x.insert(0, event.xdata)
                 y.insert(0, event.ydata)
                 is_valid = 1
-            elif ind <= (len(x)-1) and event.xdata < x[ind] and event.ydata >= y[ind] and event.xdata > x[ind-1] and event.ydata < y[ind-1]:
+            elif ind <= (len(x)-1) and event.xdata < x[ind] and event.ydata <= y[ind] and event.xdata > x[ind-1] and event.ydata > y[ind-1]:
                 # Insert point
                 x.insert(ind, event.xdata)
                 y.insert(ind, event.ydata)
@@ -2068,9 +2071,9 @@ class ADPFrame(wx.Frame):
             event.xdata = xBound1
 
         # Don't exceed y boundaries
-        if event.ydata > yBound0:
+        if event.ydata < yBound0:
             event.ydata = yBound0
-        elif event.ydata < yBound1:
+        elif event.ydata > yBound1:
             event.ydata = yBound1
 
         x[self._ind] = event.xdata
