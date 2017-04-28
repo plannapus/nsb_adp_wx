@@ -105,7 +105,7 @@ def query_events(engine,data): #Work
         END AS bottom_depth,
         CASE
             WHEN top_depth_mbsf IS NOT NULL THEN
-                top_depth_mbsf * -1.
+                top_depth_mbsf
             WHEN sample_top IS NOT NULL THEN
                 neptuneCoreDepth(top_hole_id,sample_top)
             ELSE
@@ -173,13 +173,6 @@ def fix_null(t,fixType):
     else:
         return t
 
-def fix_cores(dfCORES):
-    """Fix core depths read from file, make the depths negative"""
-    for i in range(0,len(dfCORES)):
-        dfCORES['top_depth'][i] = dfCORES['top_depth'][i] * -1.
-        dfCORES['bottom_depth'][i] = dfCORES['bottom_depth'][i] * -1.
-    return dfCORES
-
 # CALC_ functions:
 def calc_core_depth(origCore,dfCORES):
     """Calculate mbsf depth for cores (core-section,int)."""
@@ -202,12 +195,12 @@ def calc_core_depth(origCore,dfCORES):
             ccFlag = 1
         else:
             depth = dfCORES['bottom_depth'][coreIdx]  # CC but not CC,int
-            return abs(depth) * -1.
+            return abs(depth)
     if ccFlag == 0:
         section = section[0:section.find(',')]
     interval = origCore[origCore.find(',')+1:]
     depth = topDepth + (int(section)-1) * 1.5 + .01 * float(interval)
-    return abs(depth) * -1.
+    return abs(depth)
 
 def calc_depth_ma(depth,x,y):
     """Calculate age from depth along LOC"""
@@ -758,7 +751,7 @@ def plot_title(holeID):
 
 def plot_metadata(xMin, xMax, yMin, yMax, data):
     """Plot metadata."""
-    userName = data['userName']
+    userName = data['user']
     stratFileName = data['stratFileName']
     locFileName = data['LOCFileName']
     # Plot userName, stratFileName, locFileName, and timestamp
@@ -767,21 +760,22 @@ def plot_metadata(xMin, xMax, yMin, yMax, data):
     # Strip path from stratFileName and plot
     if '/' in stratFileName:
         stratFileName = stratFileName[stratFileName.rfind('/')+1:]
-    plt.text(xMax,yMin - (abs(yMin)-abs(yMax))*.125,'Strat: ' + stratFileName,size=8., ha='right')
+    plt.text(xMax,yMax - (abs(yMin)-abs(yMax))*.125,'Strat: ' + stratFileName,size=8., ha='right')
     # Strip path from locFileName and plot
     if '/' in locFileName:
         locFileName = locFileName[locFileName.rfind('/')+1:]
     # If locFileName plot
     if locFileName != '':
-        plt.text(xMax,yMin - (abs(yMin)-abs(yMax))*.150,'LOC: ' + locFileName,size=8., ha='right')
+        plt.text(xMax,yMax - (abs(yMin)-abs(yMax))*.150,'LOC: ' + locFileName,size=8., ha='right')
     # Plot initials derived from userName
-    initials = userName.split()
-    if len(initials) < 2:
-        initials = userName
-    else:
-        initials = ''.join(name[0].upper() for name in userName.split())
-    plt.text(xMax,yMax + (abs(yMin)-abs(yMax))*.10,initials,size=8., ha='right')
-    plt.text(xMax,yMax + (abs(yMin)-abs(yMax))*.075,stamp,size=8., ha='right')
+    initials = userName
+    # initials = userName.split()
+    # if len(initials) < 2:
+    #     initials = userName
+    # else:
+    #     initials = ''.join(name[0].upper() for name in userName.split())
+    plt.text(xMax,yMin + (abs(yMin)-abs(yMax))*.10,initials,size=8., ha='right')
+    plt.text(xMax,yMin + (abs(yMin)-abs(yMax))*.075,stamp,size=8., ha='right')
 
 def set_labels(labels):
     """Set axes values for plot."""
@@ -1079,8 +1073,10 @@ def read_loc(parent,fileName, data):
                 check_holeID = row[0].upper()
                 if check_holeID != data['holeID']:
                     parent.messageboard.WriteText("*** Wrong LOC holeID: " + check_holeID + " ***\n")
-                    parent.messageboard.WriteText("*** Skipping read LOC file, will not plot ***\n")
-                    return df
+                    parent.messageboard.WriteText("*** Beware that this LOC was not prepared for this hole! ***\n")
+                    parent.messageboard.WriteText("*** If this was not intentional, you can add the correct LOC using the menu option. ***\n")
+                    #parent.messageboard.WriteText("*** Skipping read LOC file, will not plot ***\n")
+                    #return df
                 #timeScale = row[1] # Time scale, e.g., Berg95
                 fromScale = row[1] # Paleomag chron scale, e.g., CK95
             if n > 2  and len(row)>1 and not(row[0].startswith("#")): # Data lines
@@ -1343,6 +1339,11 @@ class GetFilesDialog(wx.Dialog): # Dialog to choose files to work with
     def __init__(self, parent, data):
         wx.Dialog.__init__(self, parent, -1, 'Load relevant files', size=(400,180))
         flex = wx.FlexGridSizer(9,3,5,5)
+        flex.Add(wx.StaticText(self, label= ' User Name: ', style=wx.ALIGN_LEFT))
+        self.user = wx.TextCtrl(self, size=(300,-1))
+        flex.Add(self.user)
+        if 'user' in data.keys(): self.user.SetValue(data['user'])
+        flex.Add(wx.StaticText(self), wx.EXPAND)
         flex.Add(wx.StaticText(self, label= ' Core File ', style=wx.ALIGN_LEFT))
         self.corefile = wx.TextCtrl(self, size=(300,-1))
         button_core = wx.Button(self,wx.ID_ANY, label='Find core file')
@@ -1747,7 +1748,7 @@ class ADPFrame(wx.Frame):
                     fromScale = row[2]
                     n = 1
                 else: pass
-            data['stratFileName'] += " + " + fileName
+            data['stratFileName'] += " + " + os.path.basename(fileName)
             new_data = convert_agescale_file(data['toScale'], fromScale, data['dfGPTS'], new_data)
             data['dfDATUMS'] = pd.concat([data['dfDATUMS'],new_data], ignore_index=True)
             axes = self.process_axes(data)
@@ -1788,7 +1789,7 @@ class ADPFrame(wx.Frame):
         self.line, = self.ax.plot(x, y, marker='s', markerfacecolor=self.color, color=self.color,
                                   linestyle=self.linestyle, linewidth=self.linewidth, markersize=3, animated=False)
         self.plot_hiatuses()
-        #plot_metadata(xMin, xMax, yMin, yMax, data)
+        plot_metadata(self.xMin, self.xMax, self.yMin, self.yMax, data)
         # Setup index for pick of a vertex
         self.canvas.draw()
 
@@ -2315,10 +2316,10 @@ class WelcomeFrame(wx.Frame):
             else: # If data taken from files
                 files = GetFilesDialog(self, data= data) # Open the file selection dialog window
                 if files.ShowModal() == wx.ID_OK: # When OK clicked, read those files accordingly
+                    data['user'] = files.user.GetValue()
                     data['stratFileName'] = files.stratfile.GetValue()
                     data['dfCORES'] = read_cores(self,files.corefile.GetValue(), data)
                     data['dfDATUMS'] = read_datums(self, data['stratFileName'], data)
-                    data['dfCORES'] = fix_cores(data['dfCORES'])
                     if data['plotPMAG'] == 1: data['dfPMAGS'] = read_paleomag_interval(self,files.pmagfile.GetValue())
                     if data['plotLOC'] == 1:
                         data['LOCFileName'] = files.locfile.GetValue()

@@ -1,7 +1,8 @@
 Version 0.3:
 	- Corrected unicode issue (that Pat already corrected, mea culpa)
 	- Simplified/Harmonized code.
-	- Corrected polarity of depth (depth is positive). Added minor ticks and made ticks exterior to the plot. Added possibility to toggle a grid
+	- Corrected polarity of depth (depth is positive). Added minor ticks and made ticks exterior to the plot. Added possibility to toggle a grid.
+	- Added Pat's latest additions (such as plot_metadata).
 
 Version 0.2 (28/02/2017):
 	- Added possibility to load new stratigraphic events or a new LOC from file even if working with database data.
