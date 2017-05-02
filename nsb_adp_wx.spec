@@ -31,5 +31,5 @@ coll = COLLECT(exe, a.binaries, a.zipfiles, a.datas, strip=False, upx=True, name
 app = BUNDLE(coll,
              name='NSB_ADP_wx.app',
              info_plist={'CFBundleIdentifier':'org.plannapus.nsbadp',
-                                'CFBundleShortVersionString':'0.2',
+                                'CFBundleShortVersionString':'0.3',
                                 'NSHumanReadableCopyright':'None'})
