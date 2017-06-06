@@ -1,15 +1,35 @@
-Version 0.3:
+Version 0.4:
+	- Corrected axis dialog faulty behavior.
+ 	- Made function 'Run' terminate correctly even in case of cancellation by user.
+	- Made tick marks more visible.
+	- Added revision_no on metadata.
+	- Modified function `query_loc`: correct revision_no is the one that has a current_flag == 'Y', not necessarily the largest one. (This modification is a prelude to allowing the user to plot other revisions)
+	- Enabled again the toggling of the LOC line.
+	- Modified aesthetic of the hole list.
+	- Function `read_loc` and `read_datum` now catch error in the header line of the files.
+	- Some old DSDP sites have extra cores starting with letters (S, C, etc.). That prevented them from being plotted: those cores are now discarded thus allowing the plotting of those sites.
+	- Don't ask if LOC needs to be plotted anymore: if db, plot systematically if there is one; if file, plot it only if file is provided.
+
+Version 0.3 (02/05/2017):
 	- Corrected unicode issue (that Pat already corrected, mea culpa)
 	- Simplified/Harmonized code.
-	- Corrected polarity of depth (depth is positive). Added minor ticks and made ticks exterior to the plot. Added possibility to toggle a grid.
+	- Corrected polarity of depth (depth is positive).
+	- Added minor ticks and made ticks exterior to the plot.
+	- Added possibility to toggle a grid.
 	- Added Pat's latest additions (such as plot_metadata).
 
 Version 0.2 (28/02/2017):
 	- Added possibility to load new stratigraphic events or a new LOC from file even if working with database data.
 	- User can now save biostratigraphic data to a file, in the Inspect Biostratigraphic Events dialog window.
-	- Got rid of some minor annoyances such as the sofware not accepting input files with extra new lines at the end of the file; got rid of hardcoded 'toScale' variable in some functions; wrote a function `replot` to avoid duplicated code.
+	- Got rid of some minor annoyances such as the software not accepting input files with extra new lines at the end of the file.
+ 	- Got rid of hardcoded 'toScale' variable in some functions.
+	- Wrote a function `replot` to avoid duplicated code.
 
 Version 0.1 (14/02/2017):
-	- Port of Pat Diver's nsb_adp.py to wxPython. A large amount of code needed to be modified to fit wx (including many scope issue).
+	- Port of Pat Diver's nsb_adp.py to wxPython: a large amount of code needed to be modified to fit wx (many scope issues).
 	- Corrected bug which happened on some sites and prevented the plot from being drawn (caused by `color ='none'`).
-	- Modified functionalities: most saving and inspecting options and help files are now also available from a menubar; parameters are now entered thanks to radio buttons rather than 0/1 fields; DB connexion parameters simplified; added a message-board so that messages do not appear only in the console in the middle of stderr.
+	- Modified functionalities:
+		- most saving and inspecting options and help files are now also available from a menubar;
+		- parameters are now entered thanks to radio buttons rather than 0/1 fields;
+		- DB connexion parameters simplified;
+		- added a message-board so that messages do not appear only in the console in the middle of stderr.

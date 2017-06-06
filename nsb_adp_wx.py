@@ -23,23 +23,14 @@ from matplotlib.backends.backend_wx import NavigationToolbar2Wx
 from matplotlib.figure import Figure
 
 # QUERY_ functions
-def query_loc(engine,holeID): #Work
+def query_loc(engine,holeID):
     """Query LOC from database."""
-    # Query statement
-    sqlLOC = """
-        SELECT leg,site,hole,hole_id,a.site_hole,age_ma,depth_mbsf
-        AS depth_mbsf,longitude,latitude
-        FROM neptune_hole_summary a, neptune_age_model b
-        WHERE a.site_hole = b.site_hole
-        AND (b.site_hole,revision_no) IN (
-        SELECT site_hole,max(revision_no)
-        FROM neptune_age_model
-        GROUP BY 1)
-        AND hole_id = '%s'
-        ORDER BY age_ma, depth_mbsf;
-    """ % (holeID,)
-    # Use Pandas to run query and retrieve a dataframe of the sql results
-    dfLOC = psql.read_sql_query(sqlLOC, engine)
+    sqlRev = "SELECT c.site_hole as sh, c.revision_no as rn FROM neptune_age_model_history as c, neptune_hole_summary as b WHERE current_flag='Y' AND c.site_hole=b.site_hole AND b.hole_id='%s';" % (holeID,)
+    revision_no = dfLOC = psql.read_sql_query(sqlRev, engine)
+    if len(revision_no):
+        sqlLOC = "SELECT age_ma, depth_mbsf, revision_no FROM neptune_age_model b WHERE b.site_hole = '%s' AND revision_no=%i ORDER BY age_ma, depth_mbsf;" % (revision_no['sh'][0],int(revision_no['rn'][0]))
+        dfLOC = psql.read_sql_query(sqlLOC, engine)
+    else: dfLOC = []
     return dfLOC
 
 def query_events(engine,data): #Work
@@ -136,13 +127,13 @@ def query_cores(engine,holeID): #Work
     """Query for cores from database."""
     sqlCORE = """
         SELECT core,core_top_mbsf AS top_depth,
-        (core_top_mbsf + core_length) AS bottom_depth,
-        core_length AS core_length
+        (core_top_mbsf + core_length) AS bottom_depth
         FROM neptune_core
         WHERE hole_id = '%s'
         ORDER BY top_depth
     """ % (holeID,)
     dfCORES = psql.read_sql_query(sqlCORE,engine)
+    dfCORES = dfCORES[dfCORES.core.str.contains('^[0-9]+$')]
     dfCORES.core = dfCORES.core.astype(int)
     dfCORES = dfCORES.sort_values('core')
     dfCORES['newIndex'] = range(0,len(dfCORES))
@@ -293,28 +284,12 @@ def get_minmax_depths_cores(dfCORES,depths):
 
 def get_minmax_axes(ages,depths):
     """Extract min/max for age(x) and depth(y) from lists."""
-    xMinAge = min(ages)
-    xMaxAge = max(ages)
-    yMinDepth = min(depths)
-    yMaxDepth = max(depths)
-
-    xMin = math.floor((min(ages)/10.))*10
-    xMax = math.ceil((max(ages)/10.))*10
-    yMin = math.floor((min(depths)/10.))*10
-    yMax = math.ceil((max(depths)/10.))*10
-
-    # Check for too much padding on the x-axis
-    if xMax-xMaxAge > 5.:
-        xMax = xMax - 5.
-
-    # Place values into list and return
-    axes = []
-    axes.append(xMin)
-    axes.append(xMax)
-    axes.append(yMin)
-    axes.append(yMax)
-
-    return axes
+    xMin = math.floor(min(ages)/10.)*10
+    xMax = math.ceil(max(ages)/10.)*10
+    yMin = math.floor(min(depths)/10.)*10
+    yMax = math.ceil(max(depths)/10.)*10
+    if xMax-max(ages) > 5.: xMax = xMax - 5.
+    return [xMin, xMax, yMin, yMax]
 
 # PLOT_ functions:
 def get_plot_groups(dfDATUMS,plotCodes):
@@ -765,8 +740,7 @@ def plot_metadata(parent, xMin, xMax, yMin, yMax, data):
     if '/' in locFileName:
         locFileName = locFileName[locFileName.rfind('/')+1:]
     # If locFileName plot
-    if locFileName != '':
-        plt.text(xMax,yMax - (abs(yMin)-abs(yMax))*.150,'LOC: ' + locFileName,size=8., ha='right')
+    plt.text(xMax,yMax - (abs(yMin)-abs(yMax))*.150,'LOC: ' + locFileName,size=8., ha='right')
     # Plot initials derived from userName
     initials = userName
     # initials = userName.split()
@@ -788,7 +762,7 @@ def set_labels(labels):
     else:
         return labels
 
-class AnnoteFinder: #Pat's code, largely untouched
+class AnnoteFinder: #Pat's code, largely untouched (!does not seem to work as expected!)
     """
     Callback for matplotlib to display an annotation when points are clicked on.
     The point which is closest to the click and within xtol and ytol is
@@ -975,6 +949,9 @@ def read_datums(parent,fileName, data):
                 return df
             #timescale = row[1] # Not used but for clarification on time scale ...
             data['fromScale'] = row[2] # Global fromScale for paleomag age conversions
+            if data['fromScale'] not in set(data['dfGPTS']['scale']):
+                parent.messageboard.WriteText("*** Unknown GPTS scale: " + data['fromScale'] + " ***\n")
+                return df
         if n > 2  and len(row)>1 and not(row[0].startswith("#")): # Data
             d.append({'plot_fossil_group':row[0], 'datum_name':row[1],
                       'plot_code':row[2], 'datum_age_min_ma':row[3],
@@ -1079,6 +1056,9 @@ def read_loc(parent,fileName, data):
                     #return df
                 #timeScale = row[1] # Time scale, e.g., Berg95
                 fromScale = row[1] # Paleomag chron scale, e.g., CK95
+                if fromScale not in set(data['dfGPTS']['scale']):
+                    parent.messageboard.WriteText("*** Unknown GPTS scale: " + fromScale + " ***\n")
+                    return df
             if n > 2  and len(row)>1 and not(row[0].startswith("#")): # Data lines
                 d.append({'age_ma':float(row[0]), 'depth_mbsf':float(row[1])})
         df = pd.DataFrame(d, columns = ['age_ma', 'depth_mbsf'])
@@ -1107,8 +1087,8 @@ def set_axes(parent, axes):
                 fieldValues = axes
                 break
             errmsg = ""
-            if fieldValues[0] >= fieldValues[1]: errmsg = 'ageMin should be < ageMax.\n'
-            if fieldValues[2] >= fieldValues[3]: errmsg = 'depthMin should be < depthMax.\n'
+            if fieldValues[0] >= fieldValues[1]: errmsg = 'youngest age should be < to oldest age.\n'
+            if fieldValues[2] >= fieldValues[3]: errmsg = 'higher depth should be < to lower depth.\n'
             if errmsg == "": break
             else: parent.messageboard.WriteText("Error: " + errmsg)
         else:
@@ -1145,7 +1125,6 @@ def save_plot(parent, holeID, fig): #Rewritten
     if dlg.ShowModal() == wx.ID_OK:
         fileName = dlg.GetPath()
         fig.savefig(fileName)
-        # plt.savefig(fileName)
     parent.messageboard.WriteText('saving figure to %s\n' % (fileName,))
 
 def project_events(parent, dfDATUMS,x,y):
@@ -1307,22 +1286,22 @@ class HoleQueryDialog(wx.Dialog): # Dialog to choose hole from db
         dfHoleList = dfHOLES[['hole_id','ocean_code','latitude','longitude','sample_count',
                         'water_depth','meters_penetrated','meters_recovered']]
         self.holeList = dfHoleList.to_dict('records')
-        self.list_ctrl = wx.ListCtrl(self, size=(-1,450), style = wx.LC_REPORT|wx.BORDER_SUNKEN|wx.LC_SINGLE_SEL)
-        self.list_ctrl.InsertColumn(0,'hole_id')
-        self.list_ctrl.InsertColumn(1,'ocean_code')
-        self.list_ctrl.InsertColumn(2,'latitude')
-        self.list_ctrl.InsertColumn(3,'longitude')
-        self.list_ctrl.InsertColumn(4,'sample_count')
-        self.list_ctrl.InsertColumn(5,'water_depth')
-        self.list_ctrl.InsertColumn(6,'meters_penetrated')
-        self.list_ctrl.InsertColumn(7,'meters_recovered')
+        self.list_ctrl = wx.ListCtrl(self, size=(650,450), style = wx.LC_REPORT|wx.BORDER_SUNKEN|wx.LC_SINGLE_SEL)
+        self.list_ctrl.InsertColumn(0,'hole_id', width=100)
+        self.list_ctrl.InsertColumn(1,'ocean', width=50)
+        self.list_ctrl.InsertColumn(2,'latitude',format=wx.LIST_FORMAT_RIGHT, width=60)
+        self.list_ctrl.InsertColumn(3,'longitude',format=wx.LIST_FORMAT_RIGHT, width=60)
+        self.list_ctrl.InsertColumn(4,'sample count',format=wx.LIST_FORMAT_RIGHT)
+        self.list_ctrl.InsertColumn(5,'water depth',format=wx.LIST_FORMAT_RIGHT)
+        self.list_ctrl.InsertColumn(6,'penetrated',format=wx.LIST_FORMAT_RIGHT, width=70)
+        self.list_ctrl.InsertColumn(7,'recovered',format=wx.LIST_FORMAT_RIGHT, width=70)
         sizer = wx.BoxSizer(wx.VERTICAL)
         sizer.Add(self.list_ctrl, 0, wx.ALL|wx.EXPAND, 5)
         for i in self.holeList:
             self.list_ctrl.InsertStringItem(self.index, str(i['hole_id']))
             self.list_ctrl.SetStringItem(self.index, 1, str(i['ocean_code']))
-            self.list_ctrl.SetStringItem(self.index, 2, str(i['latitude']))
-            self.list_ctrl.SetStringItem(self.index, 3, str(i['longitude']))
+            self.list_ctrl.SetStringItem(self.index, 2, str(round(i['latitude'],2)))
+            self.list_ctrl.SetStringItem(self.index, 3, str(round(i['longitude'],2)))
             self.list_ctrl.SetStringItem(self.index, 4, str(i['sample_count']))
             self.list_ctrl.SetStringItem(self.index, 5, str(i['water_depth']))
             self.list_ctrl.SetStringItem(self.index, 6, str(i['meters_penetrated']))
@@ -1363,13 +1342,12 @@ class GetFilesDialog(wx.Dialog): # Dialog to choose files to work with
             button_pmag.Bind(wx.EVT_BUTTON, self.pmagLookUp)
             flex.Add(self.pmagfile)
             flex.Add(button_pmag)
-        if data['plotLOC'] == 1:
-            flex.Add(wx.StaticText(self, label= ' LOC File ', style=wx.ALIGN_LEFT))
-            self.locfile = wx.TextCtrl(self, size=(300,-1))
-            button_loc = wx.Button(self,wx.ID_ANY, label='Find LOC file')
-            button_loc.Bind(wx.EVT_BUTTON, self.locLookUp)
-            flex.Add(self.locfile)
-            flex.Add(button_loc)
+        flex.Add(wx.StaticText(self, label= ' LOC File ', style=wx.ALIGN_LEFT))
+        self.locfile = wx.TextCtrl(self, size=(300,-1))
+        button_loc = wx.Button(self,wx.ID_ANY, label='Find LOC file')
+        button_loc.Bind(wx.EVT_BUTTON, self.locLookUp)
+        flex.Add(self.locfile)
+        flex.Add(button_loc)
         flex.AddGrowableCol(1)
         hor = Ok_Cancel_Wrapper(self)
         sizer = wx.BoxSizer(wx.VERTICAL)
@@ -1445,9 +1423,9 @@ class ParamDialog(wx.Dialog): # Dialog to choose parameters
         self.color = wx.RadioBox(self, choices=['B&W','Color','Colorfill'], majorDimension=1, style=wx.RA_SPECIFY_ROWS)
         self.color.SetSelection(2)
         flex.Add(self.color)
-        flex.Add(wx.StaticText(self, label= ' Plot Line-of-Correlation: ', style=wx.ALIGN_LEFT))
-        self.show_loc = wx.RadioBox(self, choices=['Yes','No'], majorDimension=1, style=wx.RA_SPECIFY_ROWS)
-        flex.Add(self.show_loc)
+        #flex.Add(wx.StaticText(self, label= ' Plot Line-of-Correlation: ', style=wx.ALIGN_LEFT))
+        #self.show_loc = wx.RadioBox(self, choices=['Yes','No'], majorDimension=1, style=wx.RA_SPECIFY_ROWS)
+        #flex.Add(self.show_loc)
         flex.Add(wx.StaticText(self, label= ' Plot Paleomag: ', style=wx.ALIGN_LEFT))
         self.show_pmag = wx.RadioBox(self, choices=['Yes','No'], majorDimension=1, style=wx.RA_SPECIFY_ROWS)
         self.show_pmag.SetSelection(1) # Defaults to No
@@ -1470,22 +1448,22 @@ class AxisDialog(wx.Dialog): # Dialog to set the axes
     def __init__(self,axes):
         wx.Dialog.__init__(self, None, -1, 'Enter New Axis', size=(400,180))
         flex = wx.FlexGridSizer(9,2,5,5)
-        flex.Add(wx.StaticText(self, label= ' min Age ', style=wx.ALIGN_LEFT))
+        flex.Add(wx.StaticText(self, label= ' Youngest Age ', style=wx.ALIGN_LEFT))
         self.xmin = wx.TextCtrl(self, size=(300,-1))
         self.xmin.SetValue(str(axes[0]))
         flex.Add(self.xmin)
-        flex.Add(wx.StaticText(self, label= ' max Age ', style=wx.ALIGN_LEFT))
+        flex.Add(wx.StaticText(self, label= ' Oldest Age ', style=wx.ALIGN_LEFT))
         self.xmax = wx.TextCtrl(self, size=(300,-1))
         self.xmax.SetValue(str(axes[1]))
         flex.Add(self.xmax)
-        flex.Add(wx.StaticText(self, label= ' min Depth ', style=wx.ALIGN_LEFT))
-        self.ymin = wx.TextCtrl(self, size=(300,-1))
-        self.ymin.SetValue(str(axes[2]))
-        flex.Add(self.ymin)
-        flex.Add(wx.StaticText(self, label= ' max Depth ', style=wx.ALIGN_LEFT))
+        flex.Add(wx.StaticText(self, label= ' Higher Depth ', style=wx.ALIGN_LEFT))
         self.ymax = wx.TextCtrl(self, size=(300,-1))
         self.ymax.SetValue(str(axes[3]))
         flex.Add(self.ymax)
+        flex.Add(wx.StaticText(self, label= ' Lower Depth ', style=wx.ALIGN_LEFT))
+        self.ymin = wx.TextCtrl(self, size=(300,-1))
+        self.ymin.SetValue(str(axes[2]))
+        flex.Add(self.ymin)
         hor = Ok_Cancel_Wrapper(self)
         flex.Add((20,20))
         flex.Add(hor)
@@ -1615,7 +1593,7 @@ class LOCFrame(wx.Frame):
     def __init__(self, parent, x,y):
         wx.Frame.__init__(self, parent, size=(200,400), title="Inspect LOC",pos=(300,50))
         self.index = 0
-        self.list_ctrl = wx.ListCtrl(self, size=(-1,400), style = wx.LC_REPORT|wx.BORDER_SUNKEN|wx.LC_SINGLE_SEL)
+        self.list_ctrl = wx.ListCtrl(self, size=(-1,400), style = wx.LC_REPORT|wx.BORDER_SUNKEN)
         self.list_ctrl.InsertColumn(0,'Age')
         self.list_ctrl.InsertColumn(1,'Depth')
         sizer = wx.BoxSizer(wx.VERTICAL)
@@ -1634,6 +1612,10 @@ class ADPFrame(wx.Frame):
         data['plotGroups'] = get_plot_groups(data['dfDATUMS'],data['plotCodes'])
         # Setup axes
         axes = self.process_axes(data)
+        self.xMin = max(axes[0],0)
+        self.xMax = axes[1]
+        self.yMin = axes[2]
+        self.yMax = axes[3]
         # Plot
         self.has_grid = False
         self.fig = plt.figure()
@@ -1643,7 +1625,7 @@ class ADPFrame(wx.Frame):
         self.locList = []
         locData = []
         if len(data['dfLOC']) == 0:
-            locData = [(self.xMin,self.yMax),(self.xMax,self.yMin)]
+            locData = [(self.xMin,self.yMin),(self.xMax,self.yMax)]
         else:
             for i in range(0,len(data['dfLOC'])):
                 locData.append((data['dfLOC']['age_ma'][i], data['dfLOC']['depth_mbsf'][i]))
@@ -1721,22 +1703,25 @@ class ADPFrame(wx.Frame):
         dlg = wx.FileDialog(None, 'Choose file', defaultDir =default, wildcard=wildcard, style=wx.FD_OPEN)
         if dlg.ShowModal() == wx.ID_OK:
             fileName = dlg.GetPath()
-            data['dfLOC'] = read_loc(self,fileName, data)
-            locData = []
-            if len(data['dfLOC']) == 0:
-                locData = [(self.xMin,self.yMax),(self.xMax,self.yMin)]
-            else:
-                for i in range(0,len(data['dfLOC'])):
-                    locData.append((data['dfLOC']['age_ma'][i], data['dfLOC']['depth_mbsf'][i]))
-            self.locList.append(list(locData))
-            self.locIdx += 1
-            #self.locList = []
-            #self.locList.append(list(locData))
-            #self.locIdx = 0
-            if type(data['LOCFileName']) is list: data['LOCFileName'] += fileName
-            else: data['LOCFileName'] = [data['LOCFileName'], fileName]
-            axes = self.process_axes(data)
-            self.replot(data,axes)
+            newLOC = read_loc(self,fileName, data)
+            if len(newLOC):
+                data['dfLOC'] = newLOC
+                locData = []
+                if len(data['dfLOC']) == 0:
+                    locData = [(self.xMin,self.yMax),(self.xMax,self.yMin)]
+                else:
+                    for i in range(0,len(data['dfLOC'])):
+                        locData.append((data['dfLOC']['age_ma'][i], data['dfLOC']['depth_mbsf'][i]))
+                self.locList.append(list(locData))
+                self.locIdx += 1
+                #self.locList = []
+                #self.locList.append(list(locData))
+                #self.locIdx = 0
+                if type(data['LOCFileName']) is list: data['LOCFileName'] += [fileName]
+                else: data['LOCFileName'] = [data['LOCFileName'], fileName]
+                axes = self.process_axes(data)
+                self.replot(data,axes)
+            else: return
 
     def add_events(self, event, data):
         default = os.environ['NSBPATH'] + "/STRAT/"
@@ -1770,7 +1755,7 @@ class ADPFrame(wx.Frame):
         self.ax = self.fig.add_subplot(111)
         self.ax.set_xlim([self.xMin,self.xMax])
         self.ax.set_ylim([self.yMax + (abs(self.yMax - self.yMin) * .05), self.yMin - (abs(self.yMax - self.yMin) * 0.05)])
-        self.ax.tick_params(direction='out', which='both', right='off', top='off')
+        self.ax.tick_params(direction='out', which='both', right='off', top='off', width=2)
         #Plotting
         plt.rc('grid', linestyle=':', color='#7f7f7f', alpha=1) #Grid customization
         plt.rc('keymap', **self.keymap)
@@ -1869,8 +1854,7 @@ class ADPFrame(wx.Frame):
             if not self.showverts: self._ind = None
             self.showHiatus = not self.showHiatus # Toggle hiatuses
             for i in range (0,len(self.hLines)):
-                aLine = self.hLines[i]
-                setp(aLine, visible=self.showHiatus)
+                self.hLines[i][0].set_visible(self.showHiatus)
             self.canvas.draw()
 
         elif event.key =='i': # Insert a vertex to the line
@@ -1941,14 +1925,14 @@ class ADPFrame(wx.Frame):
 
         elif event.key == 's': # Save LOC to file
             x, y = self.line.get_data()
-            save_loc(self, self.holeID, x, y)
+            save_loc(self, data['holeID'], x, y)
 
         elif event.key == 'I': # Inspect LOC
             x, y = self.line.get_data()
             self.inspect_loc(x, y)
 
         elif event.key == 'p': # Save plot to file
-            save_plot(self, self.holeID, self.fig)
+            save_plot(self, data['holeID'], self.fig)
 
         elif event.key == 'l':  # List events
             #ListEventsFrame(None,data)
@@ -2272,8 +2256,6 @@ class WelcomeFrame(wx.Frame):
     def Run(self):
         params = ParamDialog(self) #Open Parameter dialog window
         data['toScale'] = 'Grad12' # Default scale
-        data['dfTIME'] = read_time_scale(self,data['toScale'])
-        data['dfCHRONS'] = read_paleomag_scale(self,data['toScale'])
         data['dfGPTS'] = read_gpts(self)
         if params.ShowModal() == wx.ID_OK: # Do, when OK clicked:
             # Collect parameters:
@@ -2285,7 +2267,6 @@ class WelcomeFrame(wx.Frame):
                 data['plotColorType'] = 2
             else:
                 data['plotColorType'] = 3
-            data['plotLOC'] = 1 if params.show_loc.GetStringSelection()=="Yes" else 0
             data['plotPMAG'] = 1 if params.show_pmag.GetStringSelection()=="Yes" else 0
             data['setAxes'] = 1 if params.set_axes.GetStringSelection()=="Yes" else 0
             if params.source.GetStringSelection() == "Database":
@@ -2303,7 +2284,7 @@ class WelcomeFrame(wx.Frame):
                         engine.connect()
                     except: # If unsuccessfull, say so and go back to Welcome window.
                         self.messageboard.WriteText('Login failed.\n')
-                        pass
+                        return
                     if engine is not None: # If successfull, proceed
                         hole = HoleQueryDialog(self, engine) # Open hole query dialog window
                         if hole.ShowModal() == wx.ID_OK: # When OK clicked:
@@ -2316,7 +2297,10 @@ class WelcomeFrame(wx.Frame):
                             data['dfPMAGS'] = query_paleomag_interval(engine,data['holeID'])
                             data['holeID'] = re.split('_',data['holeID'])[1]
                             data['dfDATUMS'] = convert_agescale_DB(data)
-                            data['stratFileName'] = data['LOCFileName'] = "NSB"
+                            data['stratFileName'] = "NSB"
+                            data['LOCFileName'] = "NSB revision %i" % (data['dfLOC']['revision_no'][0]) if len(data['dfLOC']) else ""
+                        else: return
+                else: return
             else: # If data taken from files
                 files = GetFilesDialog(self, data= data) # Open the file selection dialog window
                 if files.ShowModal() == wx.ID_OK: # When OK clicked, read those files accordingly
@@ -2325,17 +2309,23 @@ class WelcomeFrame(wx.Frame):
                     data['dfCORES'] = read_cores(self,files.corefile.GetValue(), data)
                     data['dfDATUMS'] = read_datums(self, data['stratFileName'], data)
                     if data['plotPMAG'] == 1: data['dfPMAGS'] = read_paleomag_interval(self,files.pmagfile.GetValue())
-                    if data['plotLOC'] == 1:
-                        data['LOCFileName'] = files.locfile.GetValue()
+                    data['LOCFileName'] = files.locfile.GetValue()
+                    if data['LOCFileName'] != "":
                         data['dfLOC'] = read_loc(self,data['LOCFileName'], data)
                     else:
                         data['dfLOC'] = []
-                    data['dfDATUMS'] = convert_agescale_file(data['toScale'], data['fromScale'], data['dfGPTS'], data['dfDATUMS'])
-            self.holeID = data['holeID']
-            self.messageboard.WriteText('\nHole: %s\n' % data['holeID']) # Summarize data to be plotted
-            self.messageboard.WriteText('Number of events: %s\n' % len(data['dfDATUMS']))
-            self.messageboard.WriteText('Number of tiepoints: %s\n\n' % len(data['dfLOC']))
-            w = ADPFrame(self,data) # Go on and plot
+                else: return
+        else: return
+        data['dfTIME'] = read_time_scale(self,data['toScale'])
+        data['dfCHRONS'] = read_paleomag_scale(self,data['toScale'])
+        if 'fromScale' in data.keys():
+            if data['fromScale'] != data['toScale']:
+                data['dfDATUMS'] = convert_agescale_file(data['toScale'], data['fromScale'], data['dfGPTS'], data['dfDATUMS'])
+        self.holeID = data['holeID']
+        self.messageboard.WriteText('\nHole: %s\n' % data['holeID']) # Summarize data to be plotted
+        self.messageboard.WriteText('Number of events: %s\n' % len(data['dfDATUMS']))
+        self.messageboard.WriteText('Number of tiepoints: %s\n\n' % len(data['dfLOC']))
+        w = ADPFrame(self,data) # Go on and plot
 
 if __name__ == '__main__':
     #Change default of matplotlib and pandas:
