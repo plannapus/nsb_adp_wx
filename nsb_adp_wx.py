@@ -2,19 +2,19 @@
 import os, sys
 reload(sys)
 sys.setdefaultencoding("utf-8")
-
+# Basic modules
 import decimal, string, datetime
 import re, math
 from bisect import bisect_left
 import csv
-
+# Math & DB-related modules
 import numpy as np
 import pandas as pd
 import pandas.io.sql as psql
 from sqlalchemy import create_engine
-
+# GUI modules
 import wx, wx.html
-
+# Plot-related modules
 import matplotlib
 matplotlib.use('wxAgg')
 import matplotlib.pyplot as plt
@@ -25,11 +25,16 @@ from matplotlib.figure import Figure
 # QUERY_ functions
 def query_loc(engine,holeID):
     """Query LOC from database."""
-    sqlRev = "SELECT c.site_hole as sh, c.revision_no as rn FROM neptune_age_model_history as c, neptune_hole_summary as b WHERE current_flag='Y' AND c.site_hole=b.site_hole AND b.hole_id='%s';" % (holeID,)
-    revision_no = dfLOC = psql.read_sql_query(sqlRev, engine)
+    sqlRev = "SELECT c.site_hole as sh, c.revision_no as rn, current_flag, age_quality, interpreted_by, date_worked, remark FROM neptune_age_model_history as c, neptune_hole_summary as b WHERE c.site_hole=b.site_hole AND b.hole_id='%s' ORDER BY current_flag, rn DESC;" % (holeID,)
+    revision_no = psql.read_sql_query(sqlRev, engine)
     if len(revision_no):
-        sqlLOC = "SELECT age_ma, depth_mbsf, revision_no FROM neptune_age_model b WHERE b.site_hole = '%s' AND revision_no=%i ORDER BY age_ma, depth_mbsf;" % (revision_no['sh'][0],int(revision_no['rn'][0]))
-        dfLOC = psql.read_sql_query(sqlLOC, engine)
+        revdial = RevisionDialog(None,revision_no)
+        if revdial.ShowModal() == wx.ID_OK:
+            sel = revdial.list_ctrl.GetFirstSelected()
+            rev = revdial.amList[sel]
+            sqlLOC = "SELECT age_ma, depth_mbsf, revision_no FROM neptune_age_model b WHERE b.site_hole = '%s' AND revision_no=%i ORDER BY age_ma, depth_mbsf;" % (rev['sh'],int(rev['rn']))
+            dfLOC = psql.read_sql_query(sqlLOC, engine)
+        else: dfLOC = []
     else: dfLOC = []
     return dfLOC
 
@@ -195,7 +200,6 @@ def calc_core_depth(origCore,dfCORES):
 
 def calc_depth_ma(depth,x,y):
     """Calculate age from depth along LOC"""
-    # DEV: what about event at hiatus depth?
     if depth < abs(y[0]) or depth > abs(y[len(y)-1]): # Outside of LOC range
         return -999.
     i = 0
@@ -223,7 +227,6 @@ def age_convert(age, fromScale, toScale):
     conv = sorted(conv,key=lambda x:float(x['fromScale']))
     old = map(float,[k['fromScale'] for k in conv])
     new = map(float,[k['toScale'] for k in conv])
-
     m = bisect_left(old, age)
 
     if m == 0:
@@ -232,64 +235,8 @@ def age_convert(age, fromScale, toScale):
         n = new[-1]
     else:
         n = new[m-1] + (age - old[m-1])*(new[m]-new[m-1])/(old[m]-old[m-1])
-    age = n
 
-    return age
-
-def get_minmax_ages_datum(dfDATUMS):
-    """Get min/max for ages (x axis) from the datums dataframe
-        as a list.
-    """
-    ages = []
-    ages.append(min(dfDATUMS['datum_age_max_ma'].tolist()))
-    ages.append(max(dfDATUMS['datum_age_max_ma'].tolist()))
-    ages.append(min(dfDATUMS['datum_age_min_ma'].tolist()))
-    ages.append(max(dfDATUMS['datum_age_min_ma'].tolist()))
-
-    return ages
-
-def get_minmax_depths_datum(dfDATUMS):
-    """Get min/max for depths (y axis) from the datums dataframe
-        as a list.
-    """
-    depths = []
-    depths.append(min(dfDATUMS['top_depth'].tolist()))
-    depths.append(max(dfDATUMS['top_depth'].tolist()))
-    depths.append(min(dfDATUMS['bottom_depth'].tolist()))
-    depths.append(max(dfDATUMS['bottom_depth'].tolist()))
-
-    return depths
-
-def get_minmax_ages_loc(dfLOC,ages):
-    """Get min/max ages from LOC and append to ages list."""
-    ages.append(min(dfLOC['age_ma'].tolist()))
-    ages.append(max(dfLOC['age_ma'].tolist()))
-    return ages
-
-def get_minmax_depths_loc(dfLOC,depths):
-    """Get min/max depths from LOC and append to depths list."""
-    depths.append(min(dfLOC['depth_mbsf'].tolist()))
-    depths.append(max(dfLOC['depth_mbsf'].tolist()))
-
-    return depths
-
-def get_minmax_depths_cores(dfCORES,depths):
-    """Get min/max depths from cores and append to depths list."""
-    depths.append(min(dfCORES['top_depth'].tolist()))
-    depths.append(max(dfCORES['top_depth'].tolist()))
-    depths.append(min(dfCORES['bottom_depth'].tolist()))
-    depths.append(max(dfCORES['bottom_depth'].tolist()))
-
-    return depths
-
-def get_minmax_axes(ages,depths):
-    """Extract min/max for age(x) and depth(y) from lists."""
-    xMin = math.floor(min(ages)/10.)*10
-    xMax = math.ceil(max(ages)/10.)*10
-    yMin = math.floor(min(depths)/10.)*10
-    yMax = math.ceil(max(depths)/10.)*10
-    if xMax-max(ages) > 5.: xMax = xMax - 5.
-    return [xMin, xMax, yMin, yMax]
+    return n
 
 # PLOT_ functions:
 def get_plot_groups(dfDATUMS,plotCodes):
@@ -310,30 +257,23 @@ def plot_datums(data,fig,ax,canvas):
     dfDATUMS = data['dfDATUMS']
     plotGroups = data['plotGroups']
     plotCodes = data['plotCodes']
-
     # Setup lists for using with AnnoteFinder
     xdata = []
     ydata = []
     plotCodeID = []
-
     # Save the processed data into lists for using later
     saveGroups = []
     saveRangeGroups = []
     saveRangeBoxes = []
-
     # Isotope and other symbol/color is '*'/'k'
-
     # Setup standard markers and color schemes for plotting of datum symbols
     stdMarkers    = [['F','^','^','x'],['N','D','D','x'],['R','d','d','x'],['D','8','8','x'],['M','s','s','x'],['DN','p','p','x']]
     stdBWColors   = [['F','k','k'],['N','k','k'],['R','k','k'],['D','k','k'],['M','k','k'],['DN','k','k']]
     stdColors     = [['F','white','red'],['N','white','green'],['R','white','darkblue'],['D','white','#93B0CF'],['M','white','black'],['DN','white','magenta']]
     stdFillColors = [['F','red','red'],['N','green','green'],['R','darkblue','darkblue'],['D','#93B0CF','#93B0CF'],['M','black','black'],['DN','magenta','magenta']]
-
     # Map NSB Berlin event_type for datumType
     tops = ['ACME','DISP','LCO','TOP','T','Z']
     bases = ['BOT','REAP','FCO','EVOL','B']
-
-    # plotColorType is passed in as argument
     if data['plotColorType'] == 1:  # B&W plot
         stdColors = stdBWColors
     elif data['plotColorType'] == 2:  # Color plot
@@ -349,11 +289,9 @@ def plot_datums(data,fig,ax,canvas):
         color = 'k'
         lcolor = 'k'
         fillstyle = 'full'
-
         # Using plot_fossil_group, not fossil_group
         #fossilGroup = dfDATUMS['fossil_group'][i][0]
         fossilGroup = dfDATUMS['plot_fossil_group'][i]
-
         datumType = dfDATUMS['datum_type'][i]
         if datumType in tops:
             datumType = 'T'
@@ -717,13 +655,6 @@ def plot_chrons(dfCHRONS,xMin,xMax,yMin,yMax):
                 rectangle = plt.Rectangle((dfCHRONS['chron_age_min_ma'][i],yMax-(cHeight*2.)),dfCHRONS['chron_age_max_ma'][i]-dfCHRONS['chron_age_min_ma'][i],cHeight,fc='black')
                 plt.gca().add_patch(rectangle)
 
-def plot_title(holeID):
-    """Plot the title."""
-    global title
-
-    title = 'Age Depth Plot for Site ' + holeID
-    plt.title(title)
-
 def plot_metadata(parent, xMin, xMax, yMin, yMax, data):
     """Plot metadata."""
     userName = data['user']
@@ -761,6 +692,29 @@ def set_labels(labels):
         return [title,xaxis,yaxis]
     else:
         return labels
+
+def set_axes(parent, axes):
+    """Set axes values for plot."""
+    while 1:
+        new_axes = AxisDialog([axes[0], axes[1], axes[3], axes[2]])
+        if new_axes.ShowModal()== wx.ID_OK:
+            xmin = float(new_axes.xmin.GetValue())
+            xmax = float(new_axes.xmax.GetValue())
+            ymax = float(new_axes.ymin.GetValue())
+            ymin = float(new_axes.ymax.GetValue())
+            fieldValues = [xmin, xmax, ymin, ymax]
+            if fieldValues is None:
+                fieldValues = axes
+                break
+            errmsg = ""
+            if fieldValues[0] >= fieldValues[1]: errmsg = 'youngest age should be < to oldest age.\n'
+            if fieldValues[2] >= fieldValues[3]: errmsg = 'higher depth should be < to lower depth.\n'
+            if errmsg == "": break
+            else: parent.messageboard.WriteText("Error: " + errmsg)
+        else:
+            fieldValues = axes
+            break
+    return fieldValues
 
 class AnnoteFinder: #Pat's code, largely untouched (!does not seem to work as expected!)
     """
@@ -1060,7 +1014,11 @@ def read_loc(parent,fileName, data):
                     parent.messageboard.WriteText("*** Unknown GPTS scale: " + fromScale + " ***\n")
                     return df
             if n > 2  and len(row)>1 and not(row[0].startswith("#")): # Data lines
-                d.append({'age_ma':float(row[0]), 'depth_mbsf':float(row[1])})
+                try:
+                    d.append({'age_ma':float(row[0]), 'depth_mbsf':float(row[1])})
+                except:
+                    parent.messageboard.WriteText("*** Non-numerical value in row " + str(n) + ", LOC not plotting ***\n")
+                    return []
         df = pd.DataFrame(d, columns = ['age_ma', 'depth_mbsf'])
         for i in range(len(df)):
             df['depth_mbsf'][i] = fix_null(df['depth_mbsf'][i],1)
@@ -1071,30 +1029,6 @@ def read_loc(parent,fileName, data):
                 locAge = df['age_ma'][i]
                 df['age_ma'][i] = float(str(round(age_convert(locAge, fromAgeDict, toAgeDict),3)))
     return df
-
-#SET_ functions:
-def set_axes(parent, axes):
-    """Set axes values for plot."""
-    while 1:
-        new_axes = AxisDialog([axes[0], axes[1], axes[3], axes[2]])
-        if new_axes.ShowModal()== wx.ID_OK:
-            xmin = float(new_axes.xmin.GetValue())
-            xmax = float(new_axes.xmax.GetValue())
-            ymax = float(new_axes.ymin.GetValue())
-            ymin = float(new_axes.ymax.GetValue())
-            fieldValues = [xmin, xmax, ymin, ymax]
-            if fieldValues is None:
-                fieldValues = axes
-                break
-            errmsg = ""
-            if fieldValues[0] >= fieldValues[1]: errmsg = 'youngest age should be < to oldest age.\n'
-            if fieldValues[2] >= fieldValues[3]: errmsg = 'higher depth should be < to lower depth.\n'
-            if errmsg == "": break
-            else: parent.messageboard.WriteText("Error: " + errmsg)
-        else:
-            fieldValues = axes
-            break
-    return fieldValues
 
 #SAVE_ functions:
 def save_loc(parent, holeID, x, y): #Rewritten
@@ -1240,9 +1174,9 @@ def ADP_Menubar(parent): # Menubar
     menubar.Append(File, 'File')
     menubar.Append(View, 'View')
     parent.Bind(wx.EVT_MENU, parent.Quit, File1)
-    parent.Bind(wx.EVT_MENU, parent.About, File2)
-    parent.Bind(wx.EVT_MENU, parent.Help, View1)
-    parent.Bind(wx.EVT_MENU, parent.PIH, View2)
+    parent.Bind(wx.EVT_MENU, lambda event: parent.GenericHelp(event, 'About'), File2)
+    parent.Bind(wx.EVT_MENU, lambda event: parent.GenericHelp(event, 'Help'), View1)
+    parent.Bind(wx.EVT_MENU, lambda event: parent.GenericHelp(event, 'PIH'), View2)
     return menubar
 
 def Ok_Cancel_Wrapper(parent): # Self-Explanatory
@@ -1262,39 +1196,39 @@ class HoleQueryDialog(wx.Dialog): # Dialog to choose hole from db
         self.index = 0
         parent.messageboard.WriteText('retrieving holes from database\n')
         sqlHOLES = """
-        SELECT DISTINCT leg,a.site_hole,a.hole_id AS hole_id,latitude,
-        longitude,COUNT(DISTINCT(core,section_number,sect_interval_top))
-        AS sample_count,water_depth,meters_penetrated,meters_recovered,
-        ocean_code
-        FROM neptune_hole_summary a, neptune_sample b, neptune_event_hole_index_v c
-        WHERE a.hole_id = b.hole_id
-        AND b.hole_id = c.hole_id
-        GROUP BY 1,2,3,4,5,7,8,9,10
-        UNION
-        SELECT DISTINCT leg,a.site_hole,a.hole_id AS hole_id,latitude,
-        longitude,0 AS sample_count,water_depth,meters_penetrated,
-        meters_recovered,ocean_code
-        FROM neptune_hole_summary a, neptune_event_hole_index_v c
-        WHERE a.hole_id = c.hole_id
-        AND c.hole_id NOT IN
-        (SELECT DISTINCT a.hole_id
-        FROM neptune_hole_summary a, neptune_sample b
-        WHERE a.hole_id = b.hole_id)
-        ORDER BY leg,site_hole
+        WITH A as (SELECT hole_id, COUNT(DISTINCT(sample_id)) as n_samples,
+              latitude, longitude, water_depth, ocean_code, meters_penetrated, meters_recovered,leg, site_hole
+        	  FROM neptune_hole_summary FULL JOIN neptune_sample USING (hole_id)
+        	  GROUP BY 1, 3, 4, 5, 6, 7, 8, 9, 10),
+        	 B as (SELECT hole_id, COUNT(DISTINCT(es_id)) as n_events
+              FROM neptune_hole_summary as nhs FULL JOIN neptune_event as ne ON nhs.hole_id=ne.top_hole_id
+              GROUP BY 1),
+        	 C as (SELECT hole_id, COUNT(DISTINCT(revision_no)) AS age_model
+              FROM neptune_hole_summary FULL JOIN neptune_age_model_history USING (site_hole)
+              GROUP BY 1),
+        	 D as (SELECT *
+              FROM A FULL JOIN B USING (hole_id)
+        	  WHERE hole_id IS NOT NULL)
+        SELECT *
+        FROM D FULL JOIN C USING (hole_id)
+        WHERE N_events>0 OR age_model>0
+        ORDER BY leg, site_hole;
         """
         dfHOLES = psql.read_sql_query(sqlHOLES, engine)
-        dfHoleList = dfHOLES[['hole_id','ocean_code','latitude','longitude','sample_count',
+        dfHoleList = dfHOLES[['hole_id','ocean_code','latitude','longitude','n_samples','n_events','age_model',
                         'water_depth','meters_penetrated','meters_recovered']]
         self.holeList = dfHoleList.to_dict('records')
-        self.list_ctrl = wx.ListCtrl(self, size=(650,450), style = wx.LC_REPORT|wx.BORDER_SUNKEN|wx.LC_SINGLE_SEL)
+        self.list_ctrl = wx.ListCtrl(self, size=(750,450), style = wx.LC_REPORT|wx.BORDER_SUNKEN|wx.LC_SINGLE_SEL)
         self.list_ctrl.InsertColumn(0,'hole_id', width=100)
         self.list_ctrl.InsertColumn(1,'ocean', width=50)
         self.list_ctrl.InsertColumn(2,'latitude',format=wx.LIST_FORMAT_RIGHT, width=60)
         self.list_ctrl.InsertColumn(3,'longitude',format=wx.LIST_FORMAT_RIGHT, width=60)
         self.list_ctrl.InsertColumn(4,'sample count',format=wx.LIST_FORMAT_RIGHT)
-        self.list_ctrl.InsertColumn(5,'water depth',format=wx.LIST_FORMAT_RIGHT)
-        self.list_ctrl.InsertColumn(6,'penetrated',format=wx.LIST_FORMAT_RIGHT, width=70)
-        self.list_ctrl.InsertColumn(7,'recovered',format=wx.LIST_FORMAT_RIGHT, width=70)
+        self.list_ctrl.InsertColumn(5,'event count',format=wx.LIST_FORMAT_RIGHT)
+        self.list_ctrl.InsertColumn(6,'age model?',format=wx.LIST_FORMAT_RIGHT)
+        self.list_ctrl.InsertColumn(7,'water depth',format=wx.LIST_FORMAT_RIGHT)
+        self.list_ctrl.InsertColumn(8,'penetrated',format=wx.LIST_FORMAT_RIGHT, width=70)
+        self.list_ctrl.InsertColumn(9,'recovered',format=wx.LIST_FORMAT_RIGHT, width=70)
         sizer = wx.BoxSizer(wx.VERTICAL)
         sizer.Add(self.list_ctrl, 0, wx.ALL|wx.EXPAND, 5)
         for i in self.holeList:
@@ -1302,11 +1236,44 @@ class HoleQueryDialog(wx.Dialog): # Dialog to choose hole from db
             self.list_ctrl.SetStringItem(self.index, 1, str(i['ocean_code']))
             self.list_ctrl.SetStringItem(self.index, 2, str(round(i['latitude'],2)))
             self.list_ctrl.SetStringItem(self.index, 3, str(round(i['longitude'],2)))
-            self.list_ctrl.SetStringItem(self.index, 4, str(i['sample_count']))
-            self.list_ctrl.SetStringItem(self.index, 5, str(i['water_depth']))
-            self.list_ctrl.SetStringItem(self.index, 6, str(i['meters_penetrated']))
-            self.list_ctrl.SetStringItem(self.index, 7, str(i['meters_recovered']))
+            self.list_ctrl.SetStringItem(self.index, 4, str(i['n_samples']))
+            self.list_ctrl.SetStringItem(self.index, 5, str(i['n_events']))
+            self.list_ctrl.SetStringItem(self.index, 6, str(bool(i['age_model'])))
+            self.list_ctrl.SetStringItem(self.index, 7, str(i['water_depth']))
+            self.list_ctrl.SetStringItem(self.index, 8, str(i['meters_penetrated']))
+            self.list_ctrl.SetStringItem(self.index, 9, str(i['meters_recovered']))
             self.index += 1
+        hor = Ok_Cancel_Wrapper(self)
+        sizer.Add((20,20))
+        sizer.Add(hor,0,wx.CENTER)
+        sizer.Add((20,20))
+        self.SetSizerAndFit(sizer)
+        self.Layout()
+
+class RevisionDialog(wx.Dialog): # Dialog to choose hole from db
+    def __init__(self, parent, revision_no):
+        wx.Dialog.__init__(self, parent, -1, 'Select an age model', size=(600,50), pos=(200,200))
+        self.index = 0
+        sizer = wx.BoxSizer(wx.VERTICAL)
+        self.list_ctrl = wx.ListCtrl(self, size=(750,150), style = wx.LC_REPORT|wx.BORDER_SUNKEN|wx.LC_SINGLE_SEL)
+        self.amList = revision_no.to_dict('records')
+        self.amList = sorted(self.amList,key=lambda x: [x['current_flag'],x['rn']],reverse=True)
+        self.list_ctrl.InsertColumn(0,'revision_no',width=60)
+        self.list_ctrl.InsertColumn(1,'current',width=50)
+        self.list_ctrl.InsertColumn(2,'quality',width=50)
+        self.list_ctrl.InsertColumn(3,'interpreted by',width=100)
+        self.list_ctrl.InsertColumn(4,'date worked',width=100)
+        self.list_ctrl.InsertColumn(5,'comments', width=700)
+        sizer.Add(self.list_ctrl, 0, wx.ALL|wx.EXPAND, 5)
+        for i in self.amList:
+            self.list_ctrl.InsertStringItem(self.index, str(i['rn']))
+            self.list_ctrl.SetStringItem(self.index, 1, str(i['current_flag']))
+            self.list_ctrl.SetStringItem(self.index, 2, str(i['age_quality']))
+            self.list_ctrl.SetStringItem(self.index, 3, str(i['interpreted_by']))
+            self.list_ctrl.SetStringItem(self.index, 4, str(i['date_worked']))
+            self.list_ctrl.SetStringItem(self.index, 5, str(i['remark']))
+            self.index += 1
+        self.list_ctrl.Select(0)
         hor = Ok_Cancel_Wrapper(self)
         sizer.Add((20,20))
         sizer.Add(hor,0,wx.CENTER)
@@ -1499,27 +1466,11 @@ class LabelDialog(wx.Dialog): # Dialog to set the labels
         self.Layout()
 
 # Help/Info frames:
-class AboutFrame(wx.Frame):
-    def __init__(self, parent):
+class GenericHelpFrame(wx.Frame):
+    def __init__(self, parent, path):
         wx.Frame.__init__(self, parent, size=(800,500))
         html = wx.html.HtmlWindow(self)
-        fileName = os.environ['NSBPATH'] + "/REF/program_about.txt"
-        html.LoadFile(fileName)
-        self.Show()
-
-class PIHFrame(wx.Frame):
-    def __init__(self, parent):
-        wx.Frame.__init__(self, parent, size=(800,500))
-        html = wx.html.HtmlWindow(self)
-        fileName = os.environ['NSBPATH'] + "/REF/plot_help.txt"
-        html.LoadFile(fileName)
-        self.Show()
-
-class HelpFrame(wx.Frame):
-    def __init__(self, parent):
-        wx.Frame.__init__(self, parent, size=(800,500))
-        html = wx.html.HtmlWindow(self)
-        fileName = os.environ['NSBPATH'] + "/REF/program_help.txt"
+        fileName = os.environ['NSBPATH'] + path
         html.LoadFile(fileName)
         self.Show()
 
@@ -1607,7 +1558,7 @@ class LOCFrame(wx.Frame):
 
 class ADPFrame(wx.Frame):
     def __init__(self, parent, data):
-        wx.Frame.__init__(self, None, -1, 'Age-Depth Plot', size=(500, 300))
+        wx.Frame.__init__(self, None, -1, 'Age-Depth Plot', size=(500, 300), pos= (550, 50))
         self.messageboard = parent.messageboard
         data['plotGroups'] = get_plot_groups(data['dfDATUMS'],data['plotCodes'])
         # Setup axes
@@ -1961,10 +1912,10 @@ class ADPFrame(wx.Frame):
             self.canvas.draw()
 
         elif event.key == 'h': # Plot Help
-            self.PIH(event)
+            self.GenericHelp(event, 'PIH')
 
         elif event.key == 'H': # Program Help
-            self.Help(event)
+            self.GenericHelp(event, 'Help')
 
         elif event.key == 'x': # Exit
             self.Quit(event)
@@ -2017,7 +1968,6 @@ class ADPFrame(wx.Frame):
                                       linestyle=self.linestyle, linewidth=self.linewidth, markersize=3, animated=False)
             self.plot_hiatuses()
             self.canvas.draw
-
 
     def motion_notify_callback(self,event):
         '''on mouse movement'''
@@ -2115,16 +2065,9 @@ class ADPFrame(wx.Frame):
                     self.hcolor = 'r'
                     self.hlinestyle = ':'
                 if y[i] != y[i+1]: # Almost a hiatus - alert user
-
-                    # DEV:  if you are this close, make the depth values the same (snap) ...
-                    # DEV:  depends on which point ...
-                    #yh = [y[i], y[i]] # setting point on older age to depth of younger age
-                    #yh = y[i+i], y[i+i] # setting point on younger age to depth of older age
-
-                    # DEV:  need to go back and make the y[i+1] = y[i] OR y[i] = y[i+1]
-                    # DEV:  depends on which point was moved ...
-                    # DEV:  for now, make the line BIG to alert the user
-                    self.messageboard.WriteText('alert - to make a hiatus adjust point to same depth\n')
+                    N = self.messageboard.GetNumberOfLines()
+                    if 'hiatus' not in self.messageboard.GetLineText(N-2): #Don't spam the user with same alert
+                        self.messageboard.WriteText('alert - to make a hiatus adjust point to same depth\n')
                     self.hlinestyle = '-.'
                     self.hlinewidth = 12.
 
@@ -2171,35 +2114,29 @@ class ADPFrame(wx.Frame):
         self.messageboard.WriteText('closing plot\n')
         self.Close()
 
-    def Help(self,event):
-        help = HelpFrame(None)
-
-    def About(self,event):
-        help = AboutFrame(None)
-
-    def PIH(self,event):
-        help = PIHFrame(None)
+    def GenericHelp(self, event, kind):
+        if kind == 'About': path = '/REF/program_about.txt'
+        elif kind == 'Help': path = '/REF/program_help.txt'
+        elif kind == 'PIH': path = '/REF/plot_help.txt'
+        help = GenericHelpFrame(None, path)
 
     def process_axes(self, data): # Process data to configure axes. Mostly untouched from Pat's code
-        dfDATUMS = data['dfDATUMS']
-        dfCORES = data['dfCORES']
-        dfLOC = data['dfLOC']
-        setAxes = data['setAxes']
-        ages   = get_minmax_ages_datum(dfDATUMS)
-        depths = get_minmax_depths_datum(dfDATUMS)
-        if len(dfLOC) != 0:
-            ages  = get_minmax_ages_loc(dfLOC,ages)
-            depths = get_minmax_depths_loc(dfLOC,depths)
-        if len(dfCORES) != 0:
-            depths = get_minmax_depths_cores(dfCORES,depths)
-        axes = get_minmax_axes(ages,depths)
-        xMin = axes[0]
-        xMax = axes[1]
-        yMin = axes[2]
-        yMax = axes[3]
+        ages = data['dfDATUMS']['datum_age_max_ma'].tolist()
+        depths = data['dfDATUMS']['top_depth'].tolist()
+        if len(data['dfLOC']):
+            ages = ages + data['dfLOC']['age_ma'].tolist()
+            depths = depths + data['dfLOC']['depth_mbsf'].tolist()
+        if len(data['dfCORES']):
+            depths = depths + data['dfCORES']['top_depth'].tolist()
+            depths = depths + data['dfCORES']['bottom_depth'].tolist()
+        xMin = math.floor(min(ages)/10.)*10
+        xMax = math.ceil(max(ages)/10.)*10
+        yMin = math.floor(min(depths)/10.)*10
+        yMax = math.ceil(max(depths)/10.)*10
+        if xMax-max(ages) > 5.: xMax = xMax - 5.
+        axes = [xMin, xMax, yMin, yMax]
         self.messageboard.WriteText('calculated axis:\nxMin=%.2f, xMax=%.2f, yMin=%.2f, yMax=%.2f\n' % (xMin, xMax, yMin, yMax))
-        if setAxes == 1:
-            axes = [xMin,xMax,yMin,yMax] # ints, and positive
+        if data['setAxes'] == 1:
             newAxes = set_axes(self,axes)
             xMin = float(newAxes[0])
             xMax = float(newAxes[1])
@@ -2229,21 +2166,22 @@ class WelcomeFrame(wx.Frame):
         sizer.Add(okButton,1,wx.CENTER)
         self.messageboard = wx.TextCtrl(self,size=(400,400),value="",style=wx.TE_READONLY|wx.TE_MULTILINE|wx.HSCROLL)
         sizer.Add(self.messageboard, 1, wx.CENTER) # Message to user will be displayed on messageboard
+        # self.messageboard.Bind(wx.EVT_TEXT, self.OnNewText)
         outer = wx.BoxSizer(wx.HORIZONTAL)
         outer.Add(sizer,1,wx.Center)
         self.SetSizer(outer)
+    #
+    # def OnNewText(self,event): #Attempt at refocussing on main window when new text arises
+    #     self.Raise()
 
     def Quit(self,event):
         self.Close()
 
-    def Help(self,event):
-        help = HelpFrame(None)
-
-    def About(self,event):
-        help = AboutFrame(None)
-
-    def PIH(self,event):
-        help = PIHFrame(None)
+    def GenericHelp(self, event, kind):
+        if kind == 'About': path = '/REF/program_about.txt'
+        elif kind == 'Help': path = '/REF/program_help.txt'
+        elif kind == 'PIH': path = '/REF/plot_help.txt'
+        help = GenericHelpFrame(None, path)
 
     def Start(self, event):
         action = self.action.GetValue() # Select action
@@ -2342,9 +2280,7 @@ if __name__ == '__main__':
             os.environ['NSBPATH'] = os.path.dirname(sys.executable)
     else:
         os.environ['NSBPATH'] = os.path.dirname(os.path.realpath(__file__))
-    # log = os.environ['NSBPATH']+'/log.txt' #Logger
-    # sys.stderr = open('log.txt','w')
-    data = {} # This dictionary will contain every single 'global' variable and pass them around frames, dialogs, functions, etc.
+    data = {} # This dictionary will contain every single 'global' variable and pass them around frames, dialogs & functions
     adp = wx.App(False) # Instantiate software
     frame = WelcomeFrame(None, data) # Open main frame
     frame.Show()

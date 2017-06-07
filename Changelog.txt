@@ -3,16 +3,27 @@ Version 0.4:
  	- Made function 'Run' terminate correctly even in case of cancellation by user.
 	- Made tick marks more visible.
 	- Added revision_no on metadata.
-	- Modified function `query_loc`: correct revision_no is the one that has a current_flag == 'Y', not necessarily the largest one. (This modification is a prelude to allowing the user to plot other revisions)
+	- Added possibility to choose on which age model present in the database for a given hole to work on, the default revision_no is the one that has a current_flag == 'Y'.
 	- Enabled again the toggling of the LOC line.
 	- Modified aesthetic of the hole list.
-	- Function `read_loc` and `read_datum` now catch error in the header line of the files.
-	- Some old DSDP sites have extra cores starting with letters (S, C, etc.). That prevented them from being plotted: those cores are now discarded thus allowing the plotting of those sites.
+	- Modified SQL query linked to the hole list in order to provide additional info (number of events, presence of an age model).
+	- Function `read_loc` and `read_datum` now catch error in the header line of the files, or if a value is not numerical.
+	- Now discards cores with letters in their names.
 	- Don't ask if LOC needs to be plotted anymore: if db, plot systematically if there is one; if file, plot it only if file is provided.
+	- Stop spamming user with hiatus alert.
+	- Continued simplification of code:
+		- got rid of all get_minmax_* functions.
+		- code now serves all help frames from a single function.
+		- removed most aliasing of 'data' objects.
 
 Version 0.3 (02/05/2017):
 	- Corrected unicode issue (that Pat already corrected, mea culpa)
-	- Simplified/Harmonized code.
+	- Simplified/Harmonized code:
+		- one-lined broken lines.
+		- pythonified `if` calls (i. e. removed brackets and replaced ampersand with 'and').
+		- replaced many 'self' with their direct 'data' counterpart.
+		- removed redundant code and some single-usage wrappers.
+		- replaced multiple calls to rcParams['keymap....'] to a single plt.rc('keymap',...).
 	- Corrected polarity of depth (depth is positive).
 	- Added minor ticks and made ticks exterior to the plot.
 	- Added possibility to toggle a grid.
@@ -29,7 +40,7 @@ Version 0.1 (14/02/2017):
 	- Port of Pat Diver's nsb_adp.py to wxPython: a large amount of code needed to be modified to fit wx (many scope issues).
 	- Corrected bug which happened on some sites and prevented the plot from being drawn (caused by `color ='none'`).
 	- Modified functionalities:
-		- most saving and inspecting options and help files are now also available from a menubar;
-		- parameters are now entered thanks to radio buttons rather than 0/1 fields;
-		- DB connexion parameters simplified;
+		- most saving and inspecting options and help files are now also available from a menubar.
+		- parameters are now entered thanks to radio buttons rather than 0/1 fields.
+		- DB connexion parameters simplified.
 		- added a message-board so that messages do not appear only in the console in the middle of stderr.
