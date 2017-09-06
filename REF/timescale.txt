@@ -1,52 +1,52 @@
 Time Scale
 time_scale_name	age_level_name	age_name	age_min_ma	age_max_ma	age_id	parent_age_id
-Berg95	Era	Cenozoic	0.0000	65.0000	501	500
-Berg95	Eon	Phanerozoic	0.0000	543.0000	500	500
-Berg95	Period	Quaternary	0.0000	1.7700	545	501
-Berg95	Epoch	Holocene	0.0000	0.0120	503	545
-Berg95	Subepoch	Pleistocene Upper	0.0120	0.2000	505	504
-Berg95	Epoch	Pleistocene	0.0120	1.7700	504	545
-Berg95	Subepoch	Pleistocene Middle	0.2000	0.7800	506	504
-Berg95	Subepoch	Pleistocene Lower	0.7800	1.7700	507	504
-Berg95	Stage	Calabrian	0.7800	1.7700	508	507
-Berg95	Epoch	Pliocene	1.7700	5.3000	509	501
-Berg95	Period	Tertiary	1.7700	65.0000	546	501
-Berg95	Subepoch	Pliocene Upper	1.7700	3.6000	510	509
-Berg95	Stage	Gelasian	1.7700	2.6000	512	510
-Berg95	Subperiod	Neogene	1.7700	23.8000	502	546
-Berg95	Stage	Piacenzian	2.6000	3.6000	513	510
-Berg95	Subepoch	Pliocene Lower	3.6000	5.3000	511	509
-Berg95	Stage	Zanclean	3.6000	5.3000	514	511
-Berg95	Epoch	Miocene	5.3000	23.8000	515	501
-Berg95	Subepoch	Miocene Upper	5.3000	11.2000	516	515
-Berg95	Stage	Messinian	5.3000	7.1000	519	516
-Berg95	Stage	Tortonian	7.1000	11.2000	520	516
-Berg95	Subepoch	Miocene Middle	11.2000	16.4000	517	515
-Berg95	Stage	Serravallian	11.2000	14.8000	521	517
-Berg95	Stage	Langhian	14.8000	16.4000	522	517
-Berg95	Subepoch	Miocene Lower	16.4000	23.8000	518	515
-Berg95	Stage	Burdigalian	16.4000	20.5000	523	518
-Berg95	Stage	Aquitanian	20.5000	23.8000	524	518
-Berg95	Epoch	Oligocene	23.8000	33.7000	526	525
-Berg95	Subepoch	Oligocene Upper	23.8000	28.5000	527	526
-Berg95	Stage	Chattian	23.8000	28.5000	529	527
-Berg95	Subperiod	Paleogene	23.8000	65.0000	525	546
-Berg95	Subepoch	Oligocene Lower	28.5000	33.7000	528	526
-Berg95	Stage	Rupelian	28.5000	33.7000	530	528
-Berg95	Epoch	Eocene	33.7000	55.0500	531	525
-Berg95	Subepoch	Eocene Upper	33.7000	37.0000	532	531
-Berg95	Stage	Priabonian	33.7000	37.0000	535	532
-Berg95	Subepoch	Eocene Middle	37.0000	49.0000	533	531
-Berg95	Stage	Bartonian	37.0000	41.3000	536	533
-Berg95	Stage	Lutetian	41.3000	49.0000	537	533
-Berg95	Subepoch	Eocene Lower	49.0000	55.0500	534	531
-Berg95	Stage	Ypresian	49.0000	55.0500	538	534
-Berg95	Epoch	Paleocene	55.0500	65.0000	539	525
-Berg95	Subepoch	Paleocene Upper	55.0500	61.0000	540	539
-Berg95	Stage	Thanetian	55.0500	57.9000	542	540
-Berg95	Stage	Selandian	57.9000	61.0000	543	540
-Berg95	Subepoch	Paleocene Lower	61.0000	65.0000	541	539
-Berg95	Stage	Danian	61.0000	65.0000	544	541
+CK95	Era	Cenozoic	0.0000	65.0000	501	500
+CK95	Eon	Phanerozoic	0.0000	543.0000	500	500
+CK95	Period	Quaternary	0.0000	1.7700	545	501
+CK95	Epoch	Holocene	0.0000	0.0120	503	545
+CK95	Subepoch	Pleistocene Upper	0.0120	0.2000	505	504
+CK95	Epoch	Pleistocene	0.0120	1.7700	504	545
+CK95	Subepoch	Pleistocene Middle	0.2000	0.7800	506	504
+CK95	Subepoch	Pleistocene Lower	0.7800	1.7700	507	504
+CK95	Stage	Calabrian	0.7800	1.7700	508	507
+CK95	Epoch	Pliocene	1.7700	5.3000	509	501
+CK95	Period	Tertiary	1.7700	65.0000	546	501
+CK95	Subepoch	Pliocene Upper	1.7700	3.6000	510	509
+CK95	Stage	Gelasian	1.7700	2.6000	512	510
+CK95	Subperiod	Neogene	1.7700	23.8000	502	546
+CK95	Stage	Piacenzian	2.6000	3.6000	513	510
+CK95	Subepoch	Pliocene Lower	3.6000	5.3000	511	509
+CK95	Stage	Zanclean	3.6000	5.3000	514	511
+CK95	Epoch	Miocene	5.3000	23.8000	515	501
+CK95	Subepoch	Miocene Upper	5.3000	11.2000	516	515
+CK95	Stage	Messinian	5.3000	7.1000	519	516
+CK95	Stage	Tortonian	7.1000	11.2000	520	516
+CK95	Subepoch	Miocene Middle	11.2000	16.4000	517	515
+CK95	Stage	Serravallian	11.2000	14.8000	521	517
+CK95	Stage	Langhian	14.8000	16.4000	522	517
+CK95	Subepoch	Miocene Lower	16.4000	23.8000	518	515
+CK95	Stage	Burdigalian	16.4000	20.5000	523	518
+CK95	Stage	Aquitanian	20.5000	23.8000	524	518
+CK95	Epoch	Oligocene	23.8000	33.7000	526	525
+CK95	Subepoch	Oligocene Upper	23.8000	28.5000	527	526
+CK95	Stage	Chattian	23.8000	28.5000	529	527
+CK95	Subperiod	Paleogene	23.8000	65.0000	525	546
+CK95	Subepoch	Oligocene Lower	28.5000	33.7000	528	526
+CK95	Stage	Rupelian	28.5000	33.7000	530	528
+CK95	Epoch	Eocene	33.7000	55.0500	531	525
+CK95	Subepoch	Eocene Upper	33.7000	37.0000	532	531
+CK95	Stage	Priabonian	33.7000	37.0000	535	532
+CK95	Subepoch	Eocene Middle	37.0000	49.0000	533	531
+CK95	Stage	Bartonian	37.0000	41.3000	536	533
+CK95	Stage	Lutetian	41.3000	49.0000	537	533
+CK95	Subepoch	Eocene Lower	49.0000	55.0500	534	531
+CK95	Stage	Ypresian	49.0000	55.0500	538	534
+CK95	Epoch	Paleocene	55.0500	65.0000	539	525
+CK95	Subepoch	Paleocene Upper	55.0500	61.0000	540	539
+CK95	Stage	Thanetian	55.0500	57.9000	542	540
+CK95	Stage	Selandian	57.9000	61.0000	543	540
+CK95	Subepoch	Paleocene Lower	61.0000	65.0000	541	539
+CK95	Stage	Danian	61.0000	65.0000	544	541
 Grad04	Stage	-	-999.9990	542.0000	180	4
 Grad04	Stage	-	-999.9990	513.0000	182	5
 Grad04	Stage	Paibian	-999.9990	501.0000	160	159

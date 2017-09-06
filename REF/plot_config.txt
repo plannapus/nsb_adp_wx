@@ -1,0 +1,8 @@
+fossil_group	name	symbol	color
+F	Foraminifera	^	red
+N	Nannofossils	D	green
+R	Radiolarians	d	darkblue
+D	Diatoms	8	#93B0CF
+M	Magnetic reversal	s	black
+DN	Dinoflagellates	o	magenta
+I	Isotopes	+	grey

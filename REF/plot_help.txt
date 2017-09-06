@@ -1,7 +1,7 @@
 1.  Key Bindings
 2.  Annotating / Identifying Events
 3.  Legend
-4.  Matplotlib Navigation Toolbar
+4.  Configuring the plot
 --------------------------------------------------------------------------------
 
 1.  These are the Key-bindings when interacting with the Age-Depth Plot:
@@ -12,14 +12,16 @@
       'd' delete a vertex
       ... move a vertex (no key binding)
       's' save LOC to file
+      'p' save the Plot to a file
 
       DATA
       'l' list data
-      'p' project data
+      'c' project events on LOC
 
       PLOT
       'a' axes definition
       'e' edit title, axes labels
+      'g' toggle grid on major ticks
 
       HELP
       'h' plot help
@@ -57,11 +59,11 @@
       listing of the event data.  A copy/paste of the data into file will save the data which
       can be imported and viewed in a spreadsheet application such as MS Excel or OpenOffice.
 
-'p':  To "project" the event data to the LOC, press 'p' on your keyboard when your cursor is
+'c':  To "project" the event data to the LOC, press 'p' on your keyboard when your cursor is
       within the bounds of the plot axes.  The program will calculate the "projected age" of each
       event - the age of the event projected to the LOC.  A dialog will prompt you for a filename
       to save the data.  The default name is the name of the hole with "_proj.txt" appended to it,
-      and the default directory is $NSBPATH/PROJ/ .  The listing will contain the original event
+      and the default directory is PROJ/ .  The listing will contain the original event
       "plot_age", the "proj_age", and the "proj_extension_age" which shows the difference between
       the plot_age and proj_age.  The file is tab-delimited and may be imported to a spreadsheet
       program such as MS Excel or OpenOffice.
@@ -78,12 +80,14 @@
       or press "Enter/Return" on your keyboard.  The plot will redraw with the new title and axes labels.
       Select the Cancel button to return to the plot without making changes.
 
+'g':  To add or remove a grid to the plot, press 'g' on your keyboard.
+
 --- HELP ---
 
-'h':  Plot help (this) - file $NSBPATH/REF/plot_help.txt is read and displayed in a window.  To close,
+'h':  Plot help (this) - file REF/plot_help.txt is read and displayed in a window.  To close,
       select the OK button or simply hit the Enter/Return button on your keyboard.
 
-'H':  Program help - file $NSBPATH/REF/program_help.txt is read and displayed in a window.  To close,
+'H':  Program help - file REF/program_help.txt is read and displayed in a window.  To close,
       select the OK button or simply hit the Enter/Return button on your keyboard.
 
 --- EXIT ---
@@ -96,7 +100,7 @@
 To display information on a particular event (point/symbol) you have three options:
 
     1. click Left Mouse (Button 1)   : to show the plot_code :  tDNITZdent
-    2. click Middle Mouse (Button 2) : to show the plot_code, age, and depth : tDNITZdent (11.836, -69.290) 
+    2. click Middle Mouse (Button 2) : to show the plot_code, age, and depth : tDNITZdent (11.836, -69.290)
     3. click Right Mouse (Button 3)  : to show the plot_code, event_name, age, and depth : tDNITZdent:Nitschia denticulata (11.836, -69.290)
 
     Example Notes:  plot_code (when querying database) consists of:
@@ -109,7 +113,7 @@ If any of the buttons are clicked again for the same point the annotation will t
 
 The first time you click on a point with a mouse button, the information will appear in the "quadrant" where
 you clicked near the point.  You can use this to spread out annotation to minimize overposting of closely-spaced
-events:  
+events:
 
 Quadrant 1:  above/right of point :  vertical/bottom, horizontal/left  justification
 Quadrant 2:  below/right of point :  vertical/top,    horizontal/left  justification
@@ -117,12 +121,7 @@ Quadrant 3:  below/left of point  :  vertical/top,    horizontal/right justifica
 Quadrant 4:  above/left of point  :  vertical/bottom, horizontal/right justification
 
 If more than one point very close to the same x,y location clicked the program will attempt to place the annotation
-for them offset to the right and left no matter the quadrant selected.  It is not perfect, and sometimes
-the annotation will appear reversed.  If this is a problem a solution is to turn the annotations off by
-clicking the same point (with any mouse button) and then to use the Matplotlib "zoom/rect" tool icon to zoom
-in on the area of the points, which will spread the events out.  Then click the individual events as
-necessary to annotate them separately.  Click the Matplotlib "home" tool icon to return to the original
-view.
+for them offset to the right and left no matter the quadrant selected.
 
 --------------------------------------------------------------------------------
 
@@ -137,7 +136,21 @@ group:type for instance when working with a line of correlation.
 
 --------------------------------------------------------------------------------
 
-4.  Matplotlib Navigation Toolbar
+4.  Configuring the plot
 
-The icons at the bottom of the plot belong to the Matplotlib Navigation Toolbar.  The best description of these
-can be found at:     http://matplotlib.org/users/navigation_toolbar.html
+The type of stratigraphic events that the software can recognize and their associated color and marker symbol on
+the plot can be configured by the user by modifying the file /REF/plot_config.txt. This file is a tab-separated
+matrix associating the code for a stratigraphic group, its name, its marker symbol and its color.
+By default the file is the following:
+
+fossil_group	name	symbol	color
+F	Foraminifera	^	red
+N	Nannofossils	D	green
+R	Radiolarians	d	darkblue
+D	Diatoms	8	#93B0CF
+M	Magnetic reversal	s	black
+DN	Dinoflagellates	o	magenta
+I	Isotopes	+	grey
+
+Colors are any colors recognized by python's matplotlib, i. e. can be in natural language or in RGB code preceded by a #.
+The complete list of possible marker symbols can be found at the following URL: http://matplotlib.org/api/markers_api.html

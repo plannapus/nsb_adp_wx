@@ -1,4 +1,21 @@
-Version 0.4:
+Version 0.5 (06/09/2017):
+	- Modified (and simplified) the database query to retrieve events: now even events for which we do not have a calibration are retrieved (thus allowing the user to project them on the LOC and estimate their age).
+	- Corrected the bug happening with List Biostratigraphic events when no age conversion was done (hence no "original age" was set).
+	- Corrected the tiny bug preventing to project the events on the LOC.
+	- Data of unknown age are no longer projected at age 9999Ma but their age is really set to None. This required a few modifications from the code (fix_null for instance) but also from the SQL queries.
+	- Corrected weird bug happening when an event in neptune_event has sample_top but no top_sample_depth and its core didn't exist in neptune_core (!) thus generating a None value that needs to be caught for depth as well.
+	- Modified handling of plot codes in user provided strat files: if the plot code is not recognized as a top (starts with T), bottom (starts with B) or a zone (starts with Z), it does not return an error anymore but plot the datum in filled color, with no indication of its type.
+	- Modified hit-box size for clicking on a point: xtol is now fixed at 0.1 Myr and ytol at 1.5m (i. e. one section). Used to be range of data/(nb of data points * 4) which was a problem in crowded plots.
+	- Corrected bug with range boxes introduced when changing depth polarity.
+	- Plotting markers and colors are now customizable using a plot_config.txt file. The type of biostratigraphic datums recognized by the software is therefore also extendable ad infinitum.
+	- Got rid of matplotlib navigation toolbar (was redundant with already programmed functionalities).
+	- Added possibility to save the plot in PDF, TIFF and SVG formats.
+	- Added modification for compatibility with matplotlib 2.0
+	- Continued simplification and pythonization of code:
+		- introduced use of ternary operator and list comprehensions when needed instead of for-loops and nested if-statements.
+		- defined variables used several times instead of recalculating / got rid of some single-use variables.
+
+Version 0.4 (07/06/2017):
 	- Corrected axis dialog faulty behavior.
  	- Made function 'Run' terminate correctly even in case of cancellation by user.
 	- Made tick marks more visible.

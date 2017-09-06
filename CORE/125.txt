@@ -1,0 +1,1 @@
+125	2.00	19910225	1	Extracted from CD-ROMCORE	TOP DEPTH	BOTTOM DEPTH OR BASE RECOVERED SEDS1	 0 	 6.3 2	 8 	 14.7 3	 17 	 25.6 4	 26 	 35 5	 35 	 38.5 6	 44 	 48.5 7	 53 	 60 8	 62 	 62.4 9	 71 	 71 10	 80.3 	 80.3 11	 89.5 	 89.5 

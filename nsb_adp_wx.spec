@@ -21,15 +21,15 @@ exe = EXE(pyz,
           a.scripts,
           exclude_binaries=True,
           name='NSB_ADP',
-          debug=False,
+          debug=True,
           strip=False,
-          upx=True,
-          console=False )
+          upx=False,
+          console=False)
 
-coll = COLLECT(exe, a.binaries, a.zipfiles, a.datas, strip=False, upx=True, name='NSB_ADP_wx')
+coll = COLLECT(exe, a.binaries, a.zipfiles, a.datas, strip=False, upx=False, name='NSB_ADP_wx')
 
 app = BUNDLE(coll,
              name='NSB_ADP_wx.app',
              info_plist={'CFBundleIdentifier':'org.plannapus.nsbadp',
-                                'CFBundleShortVersionString':'0.4',
+                                'CFBundleShortVersionString':'0.5',
                                 'NSHumanReadableCopyright':'None'})
