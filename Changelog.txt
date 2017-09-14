@@ -1,3 +1,10 @@
+Version 0.6 (14/09/2017):
+	- User can now compare visually two LOCs.
+	- Created a LOC manager where the user can set the current LOC or delete a loaded LOC.
+	- Users can now add a new LOC from the database as well as from a file (therefore users can see the differences between various revisions).
+	- Simplified 'Welcome' window.
+	- Brought back Pat's code that allowed to go back to a previous LOC. On top of it, it now correctly shows the name of the LOC in the metadata when switching from one to another.
+
 Version 0.5 (06/09/2017):
 	- Modified (and simplified) the database query to retrieve events: now even events for which we do not have a calibration are retrieved (thus allowing the user to project them on the LOC and estimate their age).
 	- Corrected the bug happening with List Biostratigraphic events when no age conversion was done (hence no "original age" was set).

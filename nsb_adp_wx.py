@@ -61,20 +61,16 @@ def query_events(engine,data): #Query events from tables in NSB Berlin database.
             FROM neptune_event a, neptune_event_def c
             WHERE a.event_id = c.event_id
             AND top_hole_id = '%s';""" % (data['holeID'],)
-    sqlCALIB = """SELECT event_id, calibration_scale AS scale, calibration_year,
-            young_age_ma AS datum_age_min_ma,
-            old_age_ma AS datum_age_max_ma
+    sqlCALIB = """SELECT event_id, calibration_scale AS scale, calibration_year, young_age_ma AS datum_age_min_ma, old_age_ma AS datum_age_max_ma
             FROM neptune_event_calibration
             WHERE (event_id,calibration_year) IN (
                 SELECT DISTINCT event_id,MAX(calibration_year) AS calibration_year
                 FROM neptune_event_calibration
                 GROUP BY event_id)
             UNION
-            SELECT event_id, scale, NULL AS calibration_year,
-            age_ma AS datum_age_min_ma,
-            age_ma AS datum_age_max_ma
+            SELECT event_id, scale, NULL AS calibration_year, age_ma AS datum_age_min_ma, age_ma AS datum_age_max_ma
             FROM neptune_gpts
-            WHERE scale = '%s';""" % (data['toScale'])
+            WHERE scale = '%s';""" % (data['toScale'],)
     datums = psql.read_sql_query(sqlDATUM, engine)
     calibs = psql.read_sql_query(sqlCALIB, engine)
     dfDATUMS = pd.merge(datums, calibs, how='left', on='event_id')
@@ -559,15 +555,11 @@ def plot_metadata(parent, xMin, xMax, yMin, yMax, data):
     if '/' in locFileName:
         locFileName = locFileName[locFileName.rfind('/')+1:]
     # If locFileName plot
-    plt.text(xMax,yMax - (abs(yMin)-abs(yMax))*.150,'LOC: ' + locFileName,size=8., ha='right')
-    # Plot initials derived from userName
-    initials = userName
-    # initials = userName.split()
-    # if len(initials) < 2:
-    #     initials = userName
-    # else:
-    #     initials = ''.join(name[0].upper() for name in userName.split())
-    plt.text(xMax,yMin + (abs(yMin)-abs(yMax))*.10,initials,size=8., ha='right')
+    if len(data['phantom']):
+        plt.text(xMax,yMax - (abs(yMin)-abs(yMax))*.150,'Active LOC: ' + locFileName + ' | Phantom LOC: ' + data['phantom']['loc_name'],size=8., ha='right')
+    else:
+        plt.text(xMax,yMax - (abs(yMin)-abs(yMax))*.150,'LOC: ' + locFileName,size=8., ha='right')
+    plt.text(xMax,yMin + (abs(yMin)-abs(yMax))*.10,userName,size=8., ha='right')
     plt.text(xMax,yMin + (abs(yMin)-abs(yMax))*.075,stamp,size=8., ha='right')
 
 def set_labels(labels):
@@ -940,7 +932,7 @@ def project_events(parent, data,x,y):
         dfLIST = data['dfDATUMS'][['plot_fossil_group', 'datum_type', 'datum_name',
                            'plot_code', 'plot_depth', 'plot_age']]
         # Sort by fossil group, depth, name
-        dfLIST = dfLIST.sort(['plot_fossil_group', 'plot_depth', 'datum_name'],
+        dfLIST = dfLIST.sort_values(['plot_fossil_group', 'plot_depth', 'datum_name'],
                               ascending=[True,False,True])
         # Re-index the new sorted dataframe
         newIndex=range(0,len(dfLIST))
@@ -1034,7 +1026,7 @@ def convert_agescale_file(toScale, fromScale, dfGPTS, dfDATUMS):
 def ADP_Menubar(parent): # Menubar
     menubar = wx.MenuBar()
     File = wx.Menu()
-    File1 = File.Append(wx.ID_EXIT, '&Quit\tCtrl+Q')
+    File1 = File.Append(wx.ID_EXIT, 'Quit')
     File2 = File.Append(wx.ID_ANY, 'About')
     View = wx.Menu()
     View1 = View.Append(wx.ID_ANY, 'General Help')
@@ -1111,6 +1103,19 @@ class HoleQueryDialog(wx.Dialog): # Dialog to choose hole from db
             self.list_ctrl.SetStringItem(self.index, 8, str(i['meters_penetrated']))
             self.list_ctrl.SetStringItem(self.index, 9, str(i['meters_recovered']))
             self.index += 1
+        hor = Ok_Cancel_Wrapper(self)
+        sizer.Add((20,20))
+        sizer.Add(hor,0,wx.CENTER)
+        sizer.Add((20,20))
+        self.SetSizerAndFit(sizer)
+        self.Layout()
+
+class FileOrDbDialog(wx.Dialog):
+    def __init__(self, parent):
+        wx.Dialog.__init__(self, parent, -1, 'Select a source', size=(200,50), pos=(200,200))
+        sizer = wx.BoxSizer(wx.VERTICAL)
+        self.source = wx.RadioBox(self, choices=['NSB Database','Local File'], majorDimension=1, style=wx.RA_SPECIFY_ROWS)
+        sizer.Add(self.source, 0, wx.ALL|wx.EXPAND, 5)
         hor = Ok_Cancel_Wrapper(self)
         sizer.Add((20,20))
         sizer.Add(hor,0,wx.CENTER)
@@ -1258,9 +1263,6 @@ class ParamDialog(wx.Dialog): # Dialog to choose parameters
         self.color = wx.RadioBox(self, choices=['B&W','Color','Colorfill'], majorDimension=1, style=wx.RA_SPECIFY_ROWS)
         self.color.SetSelection(2)
         flex.Add(self.color)
-        #flex.Add(wx.StaticText(self, label= ' Plot Line-of-Correlation: ', style=wx.ALIGN_LEFT))
-        #self.show_loc = wx.RadioBox(self, choices=['Yes','No'], majorDimension=1, style=wx.RA_SPECIFY_ROWS)
-        #flex.Add(self.show_loc)
         flex.Add(wx.StaticText(self, label= ' Plot Paleomag: ', style=wx.ALIGN_LEFT))
         self.show_pmag = wx.RadioBox(self, choices=['Yes','No'], majorDimension=1, style=wx.RA_SPECIFY_ROWS)
         self.show_pmag.SetSelection(1) # Defaults to No
@@ -1352,7 +1354,7 @@ class ListEventsFrame(wx.Frame):
                           'origMinAge', 'origMaxAge']] if orig else data['dfDATUMS'][['plot_fossil_group', 'datum_type', 'datum_name',
                                             'plot_code', 'datum_age_min_ma', 'datum_age_max_ma',
                                             'top_depth','bottom_depth', 'plot_age', 'plot_depth']]
-        dfLIST = dfLIST.sort(['plot_fossil_group','top_depth','datum_name'], ascending=[True,False,True])
+        dfLIST = dfLIST.sort_values(['plot_fossil_group','top_depth','datum_name'], ascending=[True,False,True])
         self.index = 0
         self.eventList = dfLIST.to_dict('records')
         self.list_ctrl = wx.ListCtrl(self, size=(-1,450), style = wx.LC_REPORT|wx.BORDER_SUNKEN|wx.LC_SINGLE_SEL)
@@ -1412,6 +1414,86 @@ class ListEventsFrame(wx.Frame):
                 fo.write( "%(plot_fossil_group)s\t%(datum_type)s %(datum_name)s\t%(plot_code)s\t%(datum_age_min_ma).3f\t%(datum_age_max_ma).3f\t%(top_depth).2f\t%(bottom_depth).2f\n" % i)
             fo.close()
 
+class ManageLOCs(wx.Dialog):
+    def __init__(self, parent, data, locList, locIdx):
+        wx.Dialog.__init__(self, parent, -1, size=(-1,-1), title='Manage loaded LOCs', pos=(200,200))
+        self.locs = locList
+        self.current = locIdx
+        self.current_name = data['LOCFileName'][self.current]
+        self.finished = True
+        sizerTop = wx.BoxSizer(wx.VERTICAL)
+        sizer = wx.FlexGridSizer(3+len(self.locs),4,5,5)
+        for i,j in enumerate(self.locs):
+            locname = data['LOCFileName'][i]
+            if '/' in locname: locname = locname[locname.rfind('/')+1:]
+            sizer.Add(wx.StaticText(self, label=str(i), style=wx.ALIGN_LEFT))
+            sizer.Add(wx.StaticText(self, label=locname, style=wx.ALIGN_LEFT))
+            if i==self.current:
+                sizer.Add(wx.StaticText(self, label="[Current LOC]", style=wx.ALIGN_LEFT))
+                sizer.Add((20,20))
+            else:
+                d = wx.Button(self,wx.ID_ANY,label="Set as Current", name=str(i))
+                d.Bind(wx.EVT_BUTTON, self.SetCurrent)
+                sizer.Add(d)
+                b = wx.Button(self,wx.ID_ANY, label='Delete', name=str(i))
+                b.Bind(wx.EVT_BUTTON, self.Delete)
+                sizer.Add(b)
+        sizerTop.Add(sizer)
+        if len(self.locs)>1:
+            sizerTop.Add((20,20))
+            hor = wx.BoxSizer(wx.HORIZONTAL)
+            if len(data['phantom']):
+                hor.Add(wx.StaticText(self, label="Current comparison: LOC %i vs LOC %i" % (self.current, data['phantom']['locIdx']), style=wx.ALIGN_RIGHT))
+                bt = wx.Button(self,wx.ID_ANY, label="Cancel")
+                bt.Bind(wx.EVT_BUTTON, self.CancelCompare)
+                hor.Add(bt)
+            else:
+                hor.Add(wx.StaticText(self, label="Compare current LOC with LOC n°", style=wx.ALIGN_RIGHT))
+                other_loc = [str(k) for k in xrange(len(self.locs)) if k != self.current]
+                self.roll = wx.ComboBox(self, id=wx.ID_ANY, size=(-1,-1), choices= other_loc, style=wx.CB_READONLY|wx.CB_DROPDOWN)
+                hor.Add(self.roll)
+                bt = wx.Button(self,wx.ID_ANY, label="Compare")
+                bt.Bind(wx.EVT_BUTTON, self.Compare)
+                hor.Add(bt)
+            sizerTop.Add(hor, 0, wx.CENTER)
+        sizerTop.Add((20,20))
+        hor2 = wx.BoxSizer(wx.HORIZONTAL)
+        okButton = wx.Button(self, wx.ID_OK, "OK")
+        hor2.Add(okButton)
+        sizerTop.Add(hor2, 0, wx.CENTER)
+        sizerTop.Add((20,20))
+        self.SetSizerAndFit(sizerTop)
+        self.Layout()
+
+    def CancelCompare(self,event):
+        self.finished = False
+        data['phantom'] = {}
+        self.Close()
+
+    def Compare(self,event):
+        self.finished = True
+        k = int(self.roll.GetCurrentSelection())
+        loc_name = data['LOCFileName'][k]
+        if '/' in loc_name: loc_name = loc_name[loc_name.rfind('/')+1:]
+        data['phantom'] = {'loc': self.locs[k], 'loc_name': loc_name, 'locIdx': k}
+        self.Close()
+
+    def SetCurrent(self,event):
+        button = event.GetEventObject()
+        k = int(button.GetName())
+        self.current = k
+        self.finished = False
+        self.Close()
+
+    def Delete(self, event):
+        button = event.GetEventObject()
+        k = int(button.GetName())
+        self.locs.pop(k)
+        data['LOCFileName'].pop(k)
+        self.current = [i for i, k in enumerate(data['LOCFileName']) if k==self.current_name][0]
+        self.finished = False
+        self.Close()
+
 class LOCFrame(wx.Frame):
     def __init__(self, parent, x,y):
         wx.Frame.__init__(self, parent, size=(200,400), title="Inspect LOC",pos=(300,50))
@@ -1434,11 +1516,11 @@ class ADPFrame(wx.Frame):
         self.messageboard = parent.messageboard
         data['plotGroups'] = get_plot_groups(data['dfDATUMS'],data['plotCodes'])
         # Setup axes
-        axes = self.process_axes(data)
-        self.xMin = max(axes[0],0)
-        self.xMax = axes[1]
-        self.yMin = axes[2]
-        self.yMax = axes[3]
+        self.axes = self.process_axes(data)
+        self.xMin = max(self.axes[0],0)
+        self.xMax = self.axes[1]
+        self.yMin = self.axes[2]
+        self.yMax = self.axes[3]
         # Plot
         self.has_grid = False
         self.fig = plt.figure()
@@ -1447,6 +1529,7 @@ class ADPFrame(wx.Frame):
         #Prepare LOC
         self.locList = []
         locData = []
+        data['phantom'] = {}
         if len(data['dfLOC']) == 0:
             locData = [(self.xMin,self.yMin),(self.xMax,self.yMax)]
         else:
@@ -1454,6 +1537,7 @@ class ADPFrame(wx.Frame):
                 locData.append((data['dfLOC']['age_ma'][i], data['dfLOC']['depth_mbsf'][i]))
         self.locList.append(list(locData))
         self.locIdx = 0
+        data['LOCFileName'] = [data['LOCFileName'],]
         # Instantiate many variables
         self.showverts = True
         self.showHiatus = True
@@ -1477,7 +1561,7 @@ class ADPFrame(wx.Frame):
             self.color = 'g'
             self.linestyle = '-'
         self.keymap = {'save':'', 'xscale':'', 'yscale':'', 'zoom':'', 'pan':'', 'home':''}
-        self.replot(data, axes)
+        self.replot(data, self.axes)
         # Plot line of correlation
         # Setup index for pick of a vertex
         self._ind = None
@@ -1497,14 +1581,15 @@ class ADPFrame(wx.Frame):
         # Setup menubar
         self.menubar = ADP_Menubar(self)
         Save = wx.Menu()
-        Plot1 = Save.Append(wx.ID_ANY, 'Add Stratigraphic events from file')
-        Plot2 = Save.Append(wx.ID_ANY, 'Load a new LOC')
-        Save.AppendSeparator()
         Save1 = Save.Append(wx.ID_ANY, 'Save Plot')
         Save2 = Save.Append(wx.ID_ANY, 'Save LOC')
         Save3 = Save.Append(wx.ID_ANY, 'Inspect LOC')
         Save4 = Save.Append(wx.ID_ANY, 'Inspect Stratigraphic data')
         Save5 = Save.Append(wx.ID_ANY, 'Project events on LOC')
+        Save.AppendSeparator()
+        Plot1 = Save.Append(wx.ID_ANY, 'Add Stratigraphic events from file')
+        Plot2 = Save.Append(wx.ID_ANY, 'Load a new LOC')
+        Plot3 = Save.Append(wx.ID_ANY, 'Manage loaded LOCs')
         self.menubar.Append(Save, 'Plot')
         self.Bind(wx.EVT_MENU, lambda event: save_plot(self, data['holeID'], self.fig), Save1)
         self.Bind(wx.EVT_MENU, lambda event: save_loc(self, data['holeID'], self.line.get_data()[0], self.line.get_data()[1]), Save2)
@@ -1513,16 +1598,56 @@ class ADPFrame(wx.Frame):
         self.Bind(wx.EVT_MENU, lambda event: project_events(self,data,self.line.get_data()[0], self.line.get_data()[1]), Save5)
         self.Bind(wx.EVT_MENU, lambda event: self.add_events(event,data), Plot1)
         self.Bind(wx.EVT_MENU, lambda event: self.add_loc(event,data), Plot2)
+        self.Bind(wx.EVT_MENU, lambda event: self.manage_loc(event,data), Plot3)
         self.SetMenuBar(self.menubar)
         self.Show(True)
 
+    def manage_loc(self,event,data):
+        m = ManageLOCs(None, data, self.locList, self.locIdx)
+        if m.ShowModal() == wx.ID_OK:
+            self.locList = m.locs
+            self.locIdx = m.current
+            if m.finished:
+                self.replot(data,self.axes)
+            else:
+                self.manage_loc(event,data)
+
     def add_loc(self,event,data):
-        default = os.environ['NSBPATH'] + "/LOC/"
-        wildcard = "Tab-separated files (*.txt)|*.txt"
-        dlg = wx.FileDialog(None, 'Choose file', defaultDir =default, wildcard=wildcard, style=wx.FD_OPEN)
-        if dlg.ShowModal() == wx.ID_OK:
-            fileName = dlg.GetPath()
-            newLOC = read_loc(self,fileName, data)
+        fd = FileOrDbDialog(None)
+        newLOC = []
+        if fd.ShowModal() == wx.ID_OK:
+            source = fd.source.GetStringSelection()
+            if source == 'NSB Database':
+                db_login = dbDialog(self,data) # Open DB Connexion dialog window
+                if db_login.ShowModal() == wx.ID_OK: # When OK clicked:
+                    # Collect and save data entered, for later connexions
+                    data['server'] = db_login.source.GetStringSelection()
+                    server = "212.201.100.111" if data['server'] == "external" else "192.168.101.133"
+                    data['user'] = db_login.username.GetValue()
+                    data['pw'] = db_login.password.GetValue()
+                    theEngine = "postgresql://%s:%s@%s/nsb" % (data['user'],data['pw'],server)
+                    engine = None
+                    try: # Try to connect
+                        engine = create_engine(theEngine,client_encoding='latin1')
+                        engine.connect()
+                    except: # If unsuccessfull, say so and go back to Welcome window.
+                        self.messageboard.WriteText('Login failed.\n')
+                        return
+                    if engine is not None:
+                        sqlHOLE = "SELECT hole_id FROM neptune_hole_summary WHERE site_hole='%s';" % (data['holeID'],)
+                        hole_id = psql.read_sql_query(sqlHOLE,engine)
+                        hole_id = hole_id['hole_id'][0]
+                        if len(hole_id)<len(data['holeID']): self.messageboard.WriteText('hole_id %s doesn\'t exist in NSB.\n' % (hole_id,))
+                        newLOC = query_loc(engine,hole_id)
+                        newLOCname = "NSB revision %i" % (newLOC['revision_no'][0])
+            elif source == 'Local File':
+                default = os.environ['NSBPATH'] + "/LOC/"
+                wildcard = "Tab-separated files (*.txt)|*.txt"
+                dlg = wx.FileDialog(None, 'Choose file', defaultDir =default, wildcard=wildcard, style=wx.FD_OPEN)
+                if dlg.ShowModal() == wx.ID_OK:
+                    fileName = dlg.GetPath()
+                    newLOC = read_loc(self,fileName, data)
+                    newLOCname = fileName
             if len(newLOC):
                 data['dfLOC'] = newLOC
                 locData = []
@@ -1532,15 +1657,12 @@ class ADPFrame(wx.Frame):
                     for i in range(0,len(data['dfLOC'])):
                         locData.append((data['dfLOC']['age_ma'][i], data['dfLOC']['depth_mbsf'][i]))
                 self.locList.append(list(locData))
-                self.locIdx += 1
-                #self.locList = []
-                #self.locList.append(list(locData))
-                #self.locIdx = 0
-                if type(data['LOCFileName']) is list: data['LOCFileName'] += [fileName]
-                else: data['LOCFileName'] = [data['LOCFileName'], fileName]
+                self.locIdx = len(self.locList) - 1
+                data['LOCFileName'].append(newLOCname)
                 axes = self.process_axes(data)
                 self.replot(data,axes)
             else: return
+        else: return
 
     def add_events(self, event, data):
         default = os.environ['NSBPATH'] + "/STRAT/"
@@ -1579,6 +1701,10 @@ class ADPFrame(wx.Frame):
         plt.rc('grid', linestyle=':', color='#7f7f7f', alpha=1) #Grid customization
         plt.rc('keymap', **self.keymap)
         self.ax.set_axisbelow(True) #So that the grid is below the main elements
+        if len(data['phantom']):
+            xp, yp = zip(*data['phantom']['loc'])
+            col_phantom = "#0000FF99" if self.color == 'g' else "#BEBEBE99"
+            self.ax.plot(xp, yp, color=col_phantom, linestyle=self.linestyle, linewidth=self.linewidth, animated=False)
         if len(data['dfDATUMS']):
             plot_datums(data,self.fig, self.ax, self.canvas)
         if len(data['dfCORES']):
@@ -1642,12 +1768,8 @@ class ADPFrame(wx.Frame):
         self._ind = None
         # Moved a vertex/point - make a new LOC
         x, y = self.line.get_data()
-        self.new_loc(x, y) # add a new LOC to locList
-        self.ax.lines.remove(self.line) # remove the line currently plotting
-        x, y = zip(*self.locList[self.locIdx]) # create a new line with inserted point
-        self.line, = self.ax.plot(x, y, marker='s', markerfacecolor=self.color, color=self.color, linestyle=self.linestyle, linewidth=self.linewidth, markersize=3, animated=False)
-        # Plot hiatuses
-        self.plot_hiatuses()
+        new = data['LOCFileName'][self.locIdx] != 'modified'
+        self.mod_loc(x, y, new) # add a new LOC to locList
 
     def key_press_callback(self, event):
         """Whenever a key is pressed."""
@@ -1689,17 +1811,9 @@ class ADPFrame(wx.Frame):
                 y.insert(ind, event.ydata)
                 is_valid = 1
 
-            # DEV:  don't set the line, you are going to remove and plot the new one ...
-            #self.line.set_data(x, y)
-
             if is_valid: # was it a valid insert?
-                self.new_loc(x, y) # add a new LOC to locList
-                self.ax.lines.remove(self.line) # remove the line currently plotting
-                x, y = zip(*self.locList[self.locIdx]) # create a new line with inserted point
-                self.line, = self.ax.plot(x, y, marker='s', markerfacecolor=self.color, color=self.color, linestyle=self.linestyle, linewidth=self.linewidth, markersize=3, animated=False)
-                # Plot hiatuses
-                self.plot_hiatuses()
-                self.canvas.draw()
+                new = data['LOCFileName'][self.locIdx] != 'modified'
+                self.mod_loc(x, y, new) # add a new LOC to locList
 
         elif event.key == 'd': # Delete a vertex of the line
             ind = self.get_ind_under_point(event)
@@ -1711,13 +1825,8 @@ class ADPFrame(wx.Frame):
                 # Remove x and y from list at ind
                 x.pop(ind)
                 y.pop(ind)
-                self.new_loc(x, y) # add a new LOC to locList
-                self.ax.lines.remove(self.line) # remove the line currently plotting
-                x, y = zip(*self.locList[self.locIdx]) # create a new line with inserted point
-                self.line, = self.ax.plot(x, y, marker='s', markerfacecolor=self.color, color=self.color, linestyle=self.linestyle, linewidth=self.linewidth, markersize=3, animated=False)
-                # Plot hiatuses
-                self.plot_hiatuses()
-                self.canvas.draw()
+                new = data['LOCFileName'][self.locIdx] != 'modified'
+                self.mod_loc(x, y, new) # add a new LOC to locList
 
         elif event.key == 's': # Save LOC to file
             x, y = self.line.get_data()
@@ -1731,7 +1840,6 @@ class ADPFrame(wx.Frame):
             save_plot(self, data['holeID'], self.fig)
 
         elif event.key == 'l':  # List events
-            #ListEventsFrame(None,data)
             self.list_events(data)
 
         elif event.key == 'c': # Project events
@@ -1766,54 +1874,13 @@ class ADPFrame(wx.Frame):
         elif event.key == 'x': # Exit
             self.Quit(event)
 
-        elif event.key == 'F' and locIdx > 0:  # First LOC in locList
-            set_locIdx(0)
-            self.ax.lines.remove(self.line) # remove the line currently plotting
-            x, y = zip(*locList[locIdx]) # re-create first LOC
-            self.line, = self.ax.plot(x, y, marker='s', markerfacecolor=self.color, color=self.color,
-                                      linestyle=self.linestyle, linewidth=self.linewidth, markersize=3, animated=False)
-            self.plot_hiatuses()
-            self.canvas.draw()
+        elif event.key == 'N' and self.locIdx < (len(self.locList)-1):  # Next LOC in locList
+            self.locIdx = self.locIdx + 1
+            self.replot(data,self.axes)
 
-        elif event.key == 'N' and locIdx < (len(locList)-1):  # Next LOC in locList
-            set_locIdx(locIdx + 1)
-            self.ax.lines.remove(self.line) # remove the line currently plotting
-            x, y = zip(*locList[locIdx]) # Next LOC
-            self.line, = self.ax.plot(x, y, marker='s', markerfacecolor=self.color, color=self.color,
-                                      linestyle=self.linestyle, linewidth=self.linewidth, markersize=3, animated=False)
-            self.plot_hiatuses()
-            self.canvas.draw()
-
-        elif event.key == 'P' and locIdx > 0:  # Previous LOC in locList
-            set_locIdx(locIdx - 1)
-            self.ax.lines.remove(self.line) # remove the line currently plotting
-            x, y = zip(*locList[locIdx]) # Previous LOC
-            self.line, = self.ax.plot(x, y, marker='s', markerfacecolor=self.color, color=self.color,
-                                      linestyle=self.linestyle, linewidth=self.linewidth, markersize=3, animated=False)
-            self.plot_hiatuses()
-            self.canvas.draw()
-
-        elif event.key == 'L' and locIdx != len(locList)-1:  # Last LOC in locList
-            set_locIdx(len(locList)-1)
-            self.ax.lines.remove(self.line) # remove the line currently plotting
-            x, y = zip(*locList[locIdx]) # Previous LOC
-            self.line, = self.ax.plot(x, y, marker='s', markerfacecolor=self.color, color=self.color,
-                                      linestyle=self.linestyle, linewidth=self.linewidth, markersize=3, animated=False)
-            self.plot_hiatuses()
-            self.canvas.draw()
-
-        elif event.key == 'C' and len(locList) > 1 and locIdx < len(locList)-1:  # Crop to this LOC in locList
-            crop_loc(locIdx+1)
-            self.canvas.draw()
-
-        elif event.key == 'D': # Delete this LOC in locList
-            del_loc(locIdx)
-            self.ax.lines.remove(self.line) # remove the line currently plotting
-            x, y = zip(*locList[locIdx]) # Previous LOC
-            self.line, = self.ax.plot(x, y, marker='s', markerfacecolor=self.color, color=self.color,
-                                      linestyle=self.linestyle, linewidth=self.linewidth, markersize=3, animated=False)
-            self.plot_hiatuses()
-            self.canvas.draw
+        elif event.key == 'P' and self.locIdx > 0:  # Previous LOC in locList
+            self.locIdx = self.locIdx - 1
+            self.replot(data,self.axes)
 
     def motion_notify_callback(self,event):
         '''on mouse movement'''
@@ -1891,16 +1958,9 @@ class ADPFrame(wx.Frame):
 
         # Check for hiatuses and plot
         for i in range (0,len(x)-1): # Check x(age) at different y(depth)
-            #if ((abs(y[i+1])-abs(y[i]) == 0.) or (abs(y[i+1])-abs(y[i]))/(x[i+1]-x[i]) <= 1.): # <=1meter/ma accumulation
             if (abs(y[i+1])-abs(y[i]) == 0.) or (abs(y[i+1])-abs(y[i]))/(x[i+1]-x[i]) <= 0.5: # <=0.5meter/ma accumulation
                 xh = [x[i], x[i+1]]
                 yh = [y[i], y[i+1]]
-
-            #
-            #DEV:  need to fix this
-            #if ((abs(y[i+1])-abs(y[i]) == 0.) or (abs(y[i+1])-abs(y[i]))/(x[i+1]-x[i]) <= 0.5): # <=0.5meter/ma accumulation
-            #    ZeroDivisionError: float division by zero
-            #
 
                 self.hlinewidth = 2.5
 
@@ -1922,33 +1982,26 @@ class ADPFrame(wx.Frame):
                                    markerfacecolor=self.hcolor, color=self.hcolor,
                                    linestyle=self.hlinestyle, linewidth=self.hlinewidth))
 
-    def new_loc(self,x, y): #Rewritten
+    def mod_loc(self,x, y, new):
         """Adding a LOC to list of LOC's."""
         newLoc =[]
         for i in range(0,len(x)):
             newLoc.append((x[i], y[i]))
-        self.locList.append(list(newLoc))
-        self.locIdx += 1
+        if new:
+            self.locIdx = len(self.locList)
+            self.locList.append(list(newLoc))
+            data['LOCFileName'].append('modified')
+            self.replot(data,self.axes)
+        else:
+            self.locList[self.locIdx] = list(newLoc)
+            self.redraw_loc()
 
-    def crop_loc(idx): #Rewritten
-        """Crop list of LOC's to current one."""
-        self.locList = self.locList[0:idx]
-        set_locIdx(len(self.locList)-1)
-
-    def del_loc(idx): #Rewritten
-        """Delete a LOC from list of LOC's."""
-        #locList = locList[0:idx]
-        self.locList.pop(idx)
-        set_locIdx(idx-1)
-
-    def set_locIdx(idx): #Rewritten
-        """Set the value of locIdx."""
-        self.locIdx = idx
-
-    def set_plot_limits(self,xMin,xMax,yMin,yMax): #Rewritten
-        """Set axes limits for figure."""
-        plt.xlim(xMin,xMax)
-        plt.ylim(yMin - (abs(yMax - yMin) * 0.05), yMax + (abs(yMax - yMin) * .05))
+    def redraw_loc(self):
+        self.ax.lines.remove(self.line) # remove the line currently plotting
+        x, y = zip(*self.locList[self.locIdx]) # create a new line with inserted point
+        self.line, = self.ax.plot(x, y, marker='s', markerfacecolor=self.color, color=self.color, linestyle=self.linestyle, linewidth=self.linewidth, markersize=3, animated=False)
+        self.plot_hiatuses()
+        self.canvas.draw()
 
     def list_events(self,data): #Rewritten
         w = ListEventsFrame(None, data)
@@ -2003,22 +2056,14 @@ class WelcomeFrame(wx.Frame):
         self.menubar = ADP_Menubar(self) # Create menubar
         self.SetMenuBar(self.menubar) # Instantiate menubar
         sizer = wx.BoxSizer(wx.VERTICAL)
-        choices = ["Run Program", "General Help", "Plot Interaction Help", "About", "Exit"]
-        self.action= wx.ComboBox(self, size=(-1,-1), choices=choices, style=wx.CB_READONLY|wx.CB_DROPDOWN)
-        sizer.Add(wx.StaticText(self, label="Select an action"),1,wx.CENTER)
-        sizer.Add(self.action,1,wx.CENTER)
-        okButton = wx.Button(self, wx.ID_OK, "OK")
-        okButton.Bind(wx.EVT_BUTTON, self.Start)
+        okButton = wx.Button(self, wx.ID_OK, "Start an Age-Depth Plot")
+        okButton.Bind(wx.EVT_BUTTON, self.Run)
         sizer.Add(okButton,1,wx.CENTER)
         self.messageboard = wx.TextCtrl(self,size=(400,400),value="",style=wx.TE_READONLY|wx.TE_MULTILINE|wx.HSCROLL)
         sizer.Add(self.messageboard, 1, wx.CENTER) # Message to user will be displayed on messageboard
-        # self.messageboard.Bind(wx.EVT_TEXT, self.OnNewText)
         outer = wx.BoxSizer(wx.HORIZONTAL)
         outer.Add(sizer,1,wx.Center)
         self.SetSizer(outer)
-    #
-    # def OnNewText(self,event): #Attempt at refocussing on main window when new text arises
-    #     self.Raise()
 
     def Quit(self,event):
         self.Close()
@@ -2029,15 +2074,7 @@ class WelcomeFrame(wx.Frame):
         elif kind == 'PIH': path = '/REF/plot_help.txt'
         help = GenericHelpFrame(None, path)
 
-    def Start(self, event):
-        action = self.action.GetValue() # Select action
-        if action == "Run Program": self.Run()
-        elif action == "General Help": self.Help(event)
-        elif action == "Plot Interaction Help": self.PIH(event)
-        elif action == "About": self.About(event)
-        elif action == "Exit": self.Quit(event)
-
-    def Run(self):
+    def Run(self,event):
         params = ParamDialog(self) #Open Parameter dialog window
         data['toScale'] = 'Grad12' # Default scale
         data['dfGPTS'] = read_gpts(self)
