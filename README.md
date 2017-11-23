@@ -1,5 +1,7 @@
 # nsb_adp_wx
 
+[Download link for the latest version of nsb_adp_wx for Mac.](https://github.com/plannapus/nsb_adp_wx/raw/master/NSB_ADP_wx%200.6%20mac.zip)
+
 Fork of Pat Diver's NSB_ADP.py in which the software uses wxPython framework (instead of easygui) in order to allow a fancier GUI interface.
 
 Version 0.6 (14/09/2017): Allow comparison of different LOC.  
