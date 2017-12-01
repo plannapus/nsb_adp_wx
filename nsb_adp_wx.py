@@ -961,7 +961,10 @@ def project_events(parent, data,x,y):
         for i in range(0,len(dfLIST)):
             # DEV: Check for hiatus?
             proj_age = calc_depth_ma(abs(dfLIST['plot_depth'][i]), x, y)
-            proj_age_extension = proj_age - dfLIST['plot_age'][i]
+            if dfLIST['plot_age'][i] is not np.nan and proj_age is not None:
+                proj_age_extension = proj_age - dfLIST['plot_age'][i]
+            else:
+                proj_age_extension = None
             row = []
             row.append(dfLIST['plot_fossil_group'][i])
             row.append(dfLIST['datum_type'][i])
@@ -969,8 +972,8 @@ def project_events(parent, data,x,y):
             row.append(dfLIST['plot_code'][i])
             row.append(str(dfLIST['plot_depth'][i]))
             row.append(str(dfLIST['plot_age'][i]))
-            row.append(str(round(proj_age,3)))
-            row.append(str(round(proj_age_extension,3)))
+            row.append(str(round(proj_age,3)) if proj_age is not None else '')
+            row.append(str(round(proj_age_extension,3)) if proj_age_extension is not None else '')
             fo.write("\t".join(map(str,row))+"\n")
 
         fo.close()
@@ -1411,7 +1414,11 @@ class ListEventsFrame(wx.Frame):
             fo.write("GROUP\tNAME\tPLOTCODE\tYOUNG AGE\tOLD AGE\tTOP DEPTH\tBOT DEPTH\n")
             list_data = data['dfDATUMS'].to_dict('records')
             for i in list_data:
-                fo.write( "%(plot_fossil_group)s\t%(datum_type)s %(datum_name)s\t%(plot_code)s\t%(datum_age_min_ma).3f\t%(datum_age_max_ma).3f\t%(top_depth).2f\t%(bottom_depth).2f\n" % i)
+                i['datum_age_min_ma'] = str(i['datum_age_min_ma']) if i['datum_age_min_ma'] is not None else ''
+                i['datum_age_max_ma'] = str(i['datum_age_max_ma']) if i['datum_age_max_ma'] is not None else ''
+                i['top_depth'] = str(i['top_depth']) if i['top_depth'] is not np.nan else ''
+                i['bottom_depth'] = str(i['bottom_depth']) if i['bottom_depth'] is not np.nan else ''
+                fo.write( "%(plot_fossil_group)s\t%(datum_type)s %(datum_name)s\t%(plot_code)s\t%(datum_age_min_ma)s\t%(datum_age_max_ma)s\t%(top_depth)s\t%(bottom_depth)s\n" % i)
             fo.close()
 
 class ManageLOCs(wx.Dialog):
