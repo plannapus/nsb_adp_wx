@@ -1,3 +1,6 @@
+Version 0.7:
+	- Created user manual and linked to it from inside the app.
+
 Version 0.6.1 (01/12/2017):
 	- Corrected bug with None type and "Export to file".
 
