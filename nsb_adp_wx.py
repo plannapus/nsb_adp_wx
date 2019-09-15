@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-import os, sys
+import os, sys, subprocess
 reload(sys)
 sys.setdefaultencoding("utf-8")
 # Basic modules
@@ -1030,16 +1030,12 @@ def ADP_Menubar(parent): # Menubar
     menubar = wx.MenuBar()
     File = wx.Menu()
     File1 = File.Append(wx.ID_EXIT, 'Quit')
-    File2 = File.Append(wx.ID_ANY, 'About')
     View = wx.Menu()
-    View1 = View.Append(wx.ID_ANY, 'General Help')
-    View2 = View.Append(wx.ID_ANY, 'Plot Interaction Help')
+    View1 = View.Append(wx.ID_ANY, 'Help')
     menubar.Append(File, 'File')
     menubar.Append(View, 'View')
     parent.Bind(wx.EVT_MENU, parent.Quit, File1)
-    parent.Bind(wx.EVT_MENU, lambda event: parent.GenericHelp(event, 'About'), File2)
-    parent.Bind(wx.EVT_MENU, lambda event: parent.GenericHelp(event, 'Help'), View1)
-    parent.Bind(wx.EVT_MENU, lambda event: parent.GenericHelp(event, 'PIH'), View2)
+    parent.Bind(wx.EVT_MENU, lambda event: parent.GenericHelp(event), View1)
     return menubar
 
 def Ok_Cancel_Wrapper(parent): # Self-Explanatory
@@ -1337,15 +1333,6 @@ class LabelDialog(wx.Dialog): # Dialog to set the labels
         sizer.Add((20,20))
         self.SetSizerAndFit(sizer)
         self.Layout()
-
-# Help/Info frames:
-class GenericHelpFrame(wx.Frame):
-    def __init__(self, parent, path):
-        wx.Frame.__init__(self, parent, size=(800,500))
-        html = wx.html.HtmlWindow(self)
-        fileName = os.environ['NSBPATH'] + path
-        html.LoadFile(fileName)
-        self.Show()
 
 class ListEventsFrame(wx.Frame):
     def __init__(self, parent, data):
@@ -1872,11 +1859,8 @@ class ADPFrame(wx.Frame):
             plt.ylabel(data['yAxisLabel'])
             self.canvas.draw()
 
-        elif event.key == 'h': # Plot Help
-            self.GenericHelp(event, 'PIH')
-
-        elif event.key == 'H': # Program Help
-            self.GenericHelp(event, 'Help')
+        elif event.key == 'h': # Program Help
+            self.GenericHelp(event)
 
         elif event.key == 'x': # Exit
             self.Quit(event)
@@ -2020,11 +2004,13 @@ class ADPFrame(wx.Frame):
         self.messageboard.WriteText('closing plot\n')
         self.Close()
 
-    def GenericHelp(self, event, kind):
-        if kind == 'About': path = '/REF/program_about.txt'
-        elif kind == 'Help': path = '/REF/program_help.txt'
-        elif kind == 'PIH': path = '/REF/plot_help.txt'
-        help = GenericHelpFrame(None, path)
+    def GenericHelp(self, event):
+        filename = os.environ['NSBPATH'] + '/REF/manual.pdf'
+        if sys.platform == "win32":
+            os.startfile(filename)
+        else:
+            opener ="open" if sys.platform == "darwin" else "xdg-open"
+            subprocess.call([opener, filename])
 
     def process_axes(self, data): # Process data to configure axes. Mostly untouched from Pat's code
         ages = data['dfDATUMS']['datum_age_max_ma'].tolist()
@@ -2075,11 +2061,13 @@ class WelcomeFrame(wx.Frame):
     def Quit(self,event):
         self.Close()
 
-    def GenericHelp(self, event, kind):
-        if kind == 'About': path = '/REF/program_about.txt'
-        elif kind == 'Help': path = '/REF/program_help.txt'
-        elif kind == 'PIH': path = '/REF/plot_help.txt'
-        help = GenericHelpFrame(None, path)
+    def GenericHelp(self, event):
+        filename = os.environ['NSBPATH'] + '/REF/manual.pdf'
+        if sys.platform == "win32":
+            os.startfile(filename)
+        else:
+            opener ="open" if sys.platform == "darwin" else "xdg-open"
+            subprocess.call([opener, filename])
 
     def Run(self,event):
         params = ParamDialog(self) #Open Parameter dialog window
