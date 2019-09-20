@@ -505,7 +505,7 @@ def plot_paleomag_interval(dfPMAGS,xMin,xMax,yMin,yMax):
             color='black'
         else:
             color='white'
-        rectangle = plt.Rectangle((xMin, bottomDepth[i]), xWidth, yHeight,
+        rectangle = plt.Rectangle((xMin, topDepth[i]), xWidth, yHeight,
                                    facecolor=color)
         plt.gca().add_patch(rectangle)
 

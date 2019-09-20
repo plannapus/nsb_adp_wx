@@ -1,4 +1,7 @@
-Version 0.7:
+Version 0.7.1:
+	- Corrected plot_paleomag_interval bug.
+
+Version 0.7 (19/09/2019):
 	- Created user manual and linked to it from inside the app.
 
 Version 0.6.1 (01/12/2017):
