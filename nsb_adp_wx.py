@@ -101,9 +101,9 @@ def query_cores(engine,holeID): #Work
 
 def query_paleomag_interval(engine,holeID): #Work
     """Query for paleomag intervals from database."""
-    sqlPMAG = """SELECT top_depth AS top_depth,bottom_depth AS bottom_depth,color,pattern,width
-                 FROM neptune_hole_summary a, neptune_paleomag_interval b
-                 WHERE a.site_hole = b.site_hole AND hole_id = '%s';""" % (holeID,)
+    sqlPMAG = """SELECT top_depth,bottom_depth,color,pattern,width
+                 FROM neptune_paleomag_interval
+                 WHERE hole_id = '%s';""" % (holeID,)
     dfPMAGS = psql.read_sql_query(sqlPMAG,engine)
     return dfPMAGS
 
@@ -187,6 +187,67 @@ def age_convert(age, fromScale, toScale):
         n = new[m-1] + (age - old[m-1])*(new[m]-new[m-1])/(old[m]-old[m-1])
 
     return n
+
+def uploadAgeModel(engine, data, x, y, currentFlag):
+    new = list(zip(x,y))
+    hole = data['holeID']
+    date = datetime.date.today()
+    username = data['user']
+    model = 'Seton et al. 2012'
+    revq = "SELECT revision_no FROM neptune_age_model_history WHERE site_hole='%s';" % (hole,)
+    rev = psql.read_sql_query(revq,engine)
+    rev = rev['revision_no']
+    new_rev = max(rev)+1 if len(rev) else 0
+    to_upload = [{'rev': new_rev, 'hole':hole, 'age':k, 'mbsf':m} for k,m in new]
+    with engine.begin() as con:
+        con.execute("INSERT INTO neptune_age_model_history (site_hole, revision_no, current_flag,interpreted_by, date_worked) VALUES ('%s',%s,'N','%s','%s');" % (hole,new_rev,username,date))
+        iq = ["INSERT INTO neptune_age_model (site_hole, revision_no, age_ma, depth_mbsf) VALUES ('%s',%s,%s,%s);" % (hole, new_rev, k, m) for k,m in new]
+        for q in iq:
+            con.execute(q)
+
+    errmsg = 'Age model successfully uploaded.\n'
+    if currentFlag:
+        mbsf = map(float,[k[0] for k in new])
+        age = map(float,[k[1] for k in new])
+        # Upgrade sample age
+        hole_id = psql.read_sql_query("SELECT hole_id FROM neptune_hole_summary WHERE site_hole='%s';" % (hole,), engine)
+        samples = psql.read_sql_query("SELECT sample_id, sample_depth_mbsf FROM neptune_sample WHERE hole_id='%s';" % (hole_id['hole_id'], ), engine)
+        samp_id = samples['sample_id']
+        samp_mbsf = samples['sample_depth_mbsf']
+        samp_age = []
+        for i in xrange(len(samp_mbsf)):
+            if samp_mbsf[i] < mbsf[0]:
+                samp_age.append({'age':None,'id':samp_id[i]})
+            elif samp_mbsf[i] > mbsf[-1]:
+                samp_age.append({'age':None,'id':samp_id[i]})
+            else:
+                m = bisect_left(mbsf,samp_mbsf[i])
+                samp_age.append({'age':age[m-1] + (samp_mbsf[i] - mbsf[m-1])*(age[m]-age[m-1])/(mbsf[m]-mbsf[m-1]),'id':samp_id[i]})
+
+        up_q1 = ['UPDATE neptune_sample SET sample_age_ma=%s WHERE sample_id=%s;' % (k['age'],k['id']) for k in samp_age]
+        # Upgrade sample paleocoordinates
+        pg = psql.read_sql_query("SELECT reconstructed_age_ma, paleo_latitude, paleo_longitude FROM neptune_paleogeography WHERE hole_id=%s AND rotation_source=%s;" % (hole_id['hole_id'],model,), engine)
+        pg = pg.sort_values('reconstructed_age_ma')
+        rage = pg['reconstructed_age_ma']
+        lat = pg['paleo_latitude']
+        lon = pg['paleo_longitude']
+        samp_coord = []
+        for i in xrange(len(samp_age)):
+            if samp_age[i] > rage[-1]:
+                samp_coord.append({'paleo_latitude':None,'paleo_longitude':None,'id':samp_id[i]})
+            else:
+                m = bisect_left(age,samp_age[i])
+                samp_coord.append({'paleo_latitude':lat[m-1]+(samp_age[i]-rage[m-1])*(lat[m]-lat[m-1])/(rage[m]-rage[m-1]),
+                            'paleo_longitude':lon[m-1]+(samp_age[i]-rage[m-1])*(lon[m]-lon[m-1])/(rage[m]-rage[m-1]),
+                            'id':samp_id[i]})
+        up_q2 = ['UPDATE neptune_sample SET paleo_latitude=%s, paleo_longitude=%s WHERE sample_id=%s;'% (k['paleo_latitude'],k['paleo_longitude'],k['id']) for k in samp_coord]
+        with engine.begin() as con:
+            con.execute("UPDATE neptune_age_model_history SET current_flag='Y' WHERE site_hole='%s' and revision_no <> %s;" % (hole, new_rev))
+            con.executemany(up_q1)
+            con.executemany(up_q2)
+        errmsg = errmsg + 'Sample ages and paleocoordinates successfully updated.\n'
+
+    return errmsg
 
 # PLOT_ functions:
 def get_plot_groups(dfDATUMS,plotCodes):
@@ -890,6 +951,34 @@ def read_loc(parent,fileName, data):
     return df
 
 #SAVE_ functions:
+def upload_loc(parent, data, x, y):
+    if 'pw' not in data.keys():
+        db_login = dbDialog(self,data)
+        if db_login.ShowModal() == wx.ID_OK: # When OK clicked:
+            # Collect and save data entered, for later connexions
+            data['server'] = db_login.source.GetStringSelection()
+            data['user'] = db_login.username.GetValue()
+            data['pw'] = db_login.password.GetValue()
+        else:
+            return
+    server = "212.201.100.111" if data['server'] == "external" else "localhost" if data['server'] == "local copy" else "192.168.101.133"
+    theEngine = "postgresql://%s:%s@%s/nsb" % (data['user'],data['pw'],server)
+    engine = None
+    try: # Try to connect
+        engine = create_engine(theEngine, client_encoding='latin1')
+        engine.connect()
+    except: # If unsuccessfull, say so and go back to Welcome window.
+        parent.messageboard.WriteText('Login failed.\n')
+        return
+    ud = UploadDialog(data,engine,x,y)
+    if ud.ShowModal() == wx.ID_OK:
+        upload = True if ud.upload.GetStringSelection() == 'Yes' else False
+        currentFlag = True if ud.current.GetStringSelection() == "Yes" else False
+        if upload:
+            errmsg = uploadAgeModel(engine, data, x, y, currentFlag)
+            parent.messageboard.WriteText(errmsg)
+    return
+
 def save_loc(parent, holeID, x, y): #Rewritten
     """Write the current LOC to a file."""
     file = holeID + "_loc.txt"
@@ -1057,17 +1146,17 @@ class HoleQueryDialog(wx.Dialog): # Dialog to choose hole from db
         sqlHOLES = """
         WITH A as (SELECT hole_id, COUNT(DISTINCT(sample_id)) as n_samples,
               latitude, longitude, water_depth, ocean_code, meters_penetrated, meters_recovered,leg, site_hole
-        	  FROM neptune_hole_summary FULL JOIN neptune_sample USING (hole_id)
-        	  GROUP BY 1, 3, 4, 5, 6, 7, 8, 9, 10),
-        	 B as (SELECT hole_id, COUNT(DISTINCT(es_id)) as n_events
+              FROM neptune_hole_summary FULL JOIN neptune_sample USING (hole_id)
+              GROUP BY 1, 3, 4, 5, 6, 7, 8, 9, 10),
+             B as (SELECT hole_id, COUNT(DISTINCT(es_id)) as n_events
               FROM neptune_hole_summary as nhs FULL JOIN neptune_event as ne ON nhs.hole_id=ne.top_hole_id
               GROUP BY 1),
-        	 C as (SELECT hole_id, COUNT(DISTINCT(revision_no)) AS age_model
+             C as (SELECT hole_id, COUNT(DISTINCT(revision_no)) AS age_model
               FROM neptune_hole_summary FULL JOIN neptune_age_model_history USING (site_hole)
               GROUP BY 1),
-        	 D as (SELECT *
+             D as (SELECT *
               FROM A FULL JOIN B USING (hole_id)
-        	  WHERE hole_id IS NOT NULL)
+              WHERE hole_id IS NOT NULL)
         SELECT *
         FROM D FULL JOIN C USING (hole_id)
         WHERE N_events>0 OR age_model>0
@@ -1226,8 +1315,8 @@ class dbDialog(wx.Dialog): # Dialog for db connexion
         wx.Dialog.__init__(self, parent, -1, 'Enter login information', size=(400,180))
         flex = wx.FlexGridSizer(9,2,5,5)
         flex.Add(wx.StaticText(self, label= ' Connexion ', style=wx.ALIGN_LEFT))
-        self.source = wx.RadioBox(self, choices=['external','internal (MfN)'], majorDimension=1, style=wx.RA_SPECIFY_ROWS)
-        if 'server' in data.keys(): self.source.SetSelection(0 if data['server']=="external" else 1)
+        self.source = wx.RadioBox(self, choices=['external','internal (MfN)','local copy'], majorDimension=1, style=wx.RA_SPECIFY_ROWS)
+        if 'server' in data.keys(): self.source.SetSelection(0 if data['server']=="external" else 2 if data['server'] == "local copy" else 1)
         flex.Add(self.source)
         flex.Add(wx.StaticText(self, label= ' Username ', style=wx.ALIGN_LEFT))
         self.username = wx.TextCtrl(self, size=(300,-1))
@@ -1306,6 +1395,44 @@ class AxisDialog(wx.Dialog): # Dialog to set the axes
         flex.Add((20,20))
         flex.AddGrowableCol(1)
         self.SetSizerAndFit(flex)
+        self.Layout()
+
+class UploadDialog(wx.Dialog):
+    def __init__(self,data,engine,x,y):
+        wx.Dialog.__init__(self, None, -1, 'Upload New Age Model to NSB', size=(400,180))
+        priv1 = psql.read_sql_query("SELECT has_table_privilege('%s','neptune_age_model_history','insert');" % (data['user'],), engine)
+        priv2 = psql.read_sql_query("SELECT has_table_privilege('%s','neptune_sample','update');" % (data['user'],), engine)
+        self.normalUser = priv1['has_table_privilege'][0]
+        self.trustedUser = priv2['has_table_privilege'][0]
+        hbox = wx.BoxSizer(wx.VERTICAL)
+        flex = wx.FlexGridSizer(4,2,5,5)
+        flex.Add(wx.StaticText(self, label="Current LOC:"))
+        self.index = 0
+        self.list_ctrl = wx.ListCtrl(self, size=(-1,400), style = wx.LC_REPORT|wx.BORDER_SUNKEN|wx.VSCROLL)
+        self.list_ctrl.InsertColumn(0,'Age')
+        self.list_ctrl.InsertColumn(1,'Depth')
+        flex.Add(self.list_ctrl)
+        for i in xrange(len(x)):
+            self.list_ctrl.InsertStringItem(self.index, '%.3f' % (x[i],))
+            self.list_ctrl.SetStringItem(self.index, 1, '%.2f' % (y[i],))
+            self.index += 1
+        flex.Add(wx.StaticText(self, label = "Upload?"))
+        self.upload = wx.RadioBox(self, choices=['Yes','No'], majorDimension=1, style=wx.RA_SPECIFY_ROWS)
+        if not self.normalUser: self.upload.EnableItem(0,False)
+        self.upload.SetSelection(1)
+        flex.Add(self.upload)
+        flex.Add(wx.StaticText(self, label = "Make current age model?"))
+        self.current = wx.RadioBox(self, choices=['Yes','No'], majorDimension=1, style=wx.RA_SPECIFY_ROWS)
+        if not self.trustedUser: self.current.EnableItem(0,False)
+        self.current.SetSelection(1)
+        flex.Add(self.current)
+        flex.Add((20,20))
+        hor = Ok_Cancel_Wrapper(self)
+        flex.Add(hor)
+        flex.AddGrowableCol(1)
+        flex.AddGrowableRow(0)
+        hbox.Add(flex, flag=wx.ALL|wx.EXPAND, border=15)
+        self.SetSizerAndFit(hbox)
         self.Layout()
 
 class LabelDialog(wx.Dialog): # Dialog to set the labels
@@ -1578,6 +1705,7 @@ class ADPFrame(wx.Frame):
         Save1 = Save.Append(wx.ID_ANY, 'Save Plot')
         Save2 = Save.Append(wx.ID_ANY, 'Save LOC')
         Save3 = Save.Append(wx.ID_ANY, 'Inspect LOC')
+        Save6 = Save.Append(wx.ID_ANY, 'Upload LOC to NSB')
         Save4 = Save.Append(wx.ID_ANY, 'Inspect Stratigraphic data')
         Save5 = Save.Append(wx.ID_ANY, 'Project events on LOC')
         Save.AppendSeparator()
@@ -1588,6 +1716,7 @@ class ADPFrame(wx.Frame):
         self.Bind(wx.EVT_MENU, lambda event: save_plot(self, data['holeID'], self.fig), Save1)
         self.Bind(wx.EVT_MENU, lambda event: save_loc(self, data['holeID'], self.line.get_data()[0], self.line.get_data()[1]), Save2)
         self.Bind(wx.EVT_MENU, lambda event: self.inspect_loc(self.line.get_data()[0], self.line.get_data()[1]), Save3)
+        self.Bind(wx.EVT_MENU, lambda event: upload_loc(self, data, self.line.get_data()[0], self.line.get_data()[1]), Save6)
         self.Bind(wx.EVT_MENU, lambda event: self.list_events(data), Save4)
         self.Bind(wx.EVT_MENU, lambda event: project_events(self,data,self.line.get_data()[0], self.line.get_data()[1]), Save5)
         self.Bind(wx.EVT_MENU, lambda event: self.add_events(event,data), Plot1)
@@ -1616,7 +1745,7 @@ class ADPFrame(wx.Frame):
                 if db_login.ShowModal() == wx.ID_OK: # When OK clicked:
                     # Collect and save data entered, for later connexions
                     data['server'] = db_login.source.GetStringSelection()
-                    server = "212.201.100.111" if data['server'] == "external" else "192.168.101.133"
+                    server = "212.201.100.111" if data['server'] == "external" else "localhost" if data['server'] == "local copy" else "192.168.101.133"
                     data['user'] = db_login.username.GetValue()
                     data['pw'] = db_login.password.GetValue()
                     theEngine = "postgresql://%s:%s@%s/nsb" % (data['user'],data['pw'],server)
@@ -2090,7 +2219,7 @@ class WelcomeFrame(wx.Frame):
                 if db_login.ShowModal() == wx.ID_OK: # When OK clicked:
                     # Collect and save data entered, for later connexions
                     data['server'] = db_login.source.GetStringSelection()
-                    server = "212.201.100.111" if data['server'] == "external" else "192.168.101.133"
+                    server = "212.201.100.111" if data['server'] == "external" else "localhost" if data['server'] == "localhost" else "192.168.101.133"
                     data['user'] = db_login.username.GetValue()
                     data['pw'] = db_login.password.GetValue()
                     theEngine = "postgresql://%s:%s@%s/nsb" % (data['user'],data['pw'],server)

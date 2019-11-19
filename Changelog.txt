@@ -1,5 +1,8 @@
-Version 0.7.1:
+Version x.x:
 	- Corrected plot_paleomag_interval bug.
+	- Add possibility to work on a local copy of NSB.
+	- Add interface to upload a LOC to NSB.
+	- Update and simplified the call to neptune_paleomag_interval.
 
 Version 0.7 (19/09/2019):
 	- Created user manual and linked to it from inside the app.
