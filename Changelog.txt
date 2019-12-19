@@ -1,4 +1,4 @@
-Version x.x:
+Version 0.8:
 	- Corrected plot_paleomag_interval bug.
 	- Add possibility to work on a local copy of NSB.
 	- Add interface to upload a LOC to NSB.

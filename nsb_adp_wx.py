@@ -199,8 +199,11 @@ def uploadAgeModel(engine, data, x, y, currentFlag):
     rev = rev['revision_no']
     new_rev = max(rev)+1 if len(rev) else 0
     to_upload = [{'rev': new_rev, 'hole':hole, 'age':k, 'mbsf':m} for k,m in new]
+    cf = 'Y' if currentFlag else 'N'
     with engine.begin() as con:
-        con.execute("INSERT INTO neptune_age_model_history (site_hole, revision_no, current_flag,interpreted_by, date_worked) VALUES ('%s',%s,'N','%s','%s');" % (hole,new_rev,username,date))
+        if len(rev) and currentFlag:
+            con.execute("UPDATE neptune_age_model_history SET current_flag='N' WHERE site_hole='%s';" % (hole,))
+        con.execute("INSERT INTO neptune_age_model_history (site_hole, revision_no, current_flag,interpreted_by, date_worked) VALUES ('%s',%s,'%s','%s','%s');" % (hole,new_rev,cf,username,date))
         iq = ["INSERT INTO neptune_age_model (site_hole, revision_no, age_ma, depth_mbsf) VALUES ('%s',%s,%s,%s);" % (hole, new_rev, k, m) for k,m in new]
         for q in iq:
             con.execute(q)
