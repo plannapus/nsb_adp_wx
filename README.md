@@ -4,7 +4,7 @@
 
 Fork of Pat Diver's NSB_ADP.py in which the software uses wxPython framework (instead of easygui) in order to allow a fancier GUI interface.
 
-Version 0.7 (15/09/2019): Repackaged, with user manual.
+Version 0.7 (15/09/2019): Repackaged, with user manual.  
 Version 0.6 (14/09/2017): Allow comparison of different LOC.  
 Version 0.5 (06/09/2017): Customizable markers/colors; Got rid of matplotlib navigation; Missing values are treated as such.  
 Version 0.4 (07/06/2017): Enhanced exploration of NSB; Simplified options.  
