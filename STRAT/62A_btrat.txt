@@ -1,0 +1,98 @@
+62A	2	Grad12
+GROUP	NAME	PLOTCODE	YOUNG AGE	OLD AGE	TOP DEPTH	BOT DEPTH
+F	BOT Globoturborotalita nepenthes	bFGLTRnepe	11.675	11.675	321.96	323.46
+N	TOP Catinaster coalitus	tNCATIcoal	9.7	9.7	305.61	306.11
+N	BOT Discoaster hamatus	bNDISChama	10.496	10.496	313.55	314.55
+N	TOP Discoaster berggrenii	tNDISCberg	6.338	6.338	144.66	147.15
+F	BOT Globigerinoides conglobatus	bFGLODcong	5.964	5.964	229.84	231.55
+F	BOT Globigerinoides fistulosus	bFGLODfist	3.012	3.012	78.37	79.86
+F	BOT Globorotalia inflata	bFGLOAinfl	3.126	3.126	63.06	63.26
+F	BOT Globorotalia crassaformis s.s.	bFGLOAcrss	4.493	4.493	79.86	82.89
+F	BOT Globorotalia margaritae	bFGLOAmarg	6.338	6.338	115.05	116.56
+F	BOT Globorotalia tumida	bFGLOAtumi	5.827	5.827	213.13	214.63
+F	BOT Globorotalia truncatulinoides	bFGLOAtrun	1.967	1.967	42.71	44.21
+F	BOT Globorotalia tosaensis	bFGLOAtosa	3.232	3.232	63.06	63.26
+F	BOT Globoquadrina dehiscens	bFGLOQdehi	22.405	22.405	354.71	357.51
+F	BOT Neogloboquadrina acostaensis	bFNEOGacos	9.84	9.84	222.23	223.55
+F	BOT Pulleniatina primalis	bFPULLprim	6.606	6.606	187.8	189.3
+F	BOT Sphaeroidinella dehiscens s.l.	bFSPHAdes.	5.689	5.689	116.56	118.05
+F	TOP Globorotalia exilis	tFGLOAexil	2.182	2.182	9.28	15.21
+F	TOP Globorotalia lenguaensis	tFGLOAleng	6.129	6.129	278.96	280.4
+F	TOP Globigerinoides fistulosus	tFGLODfist	1.88	1.88	39.67	41.16
+F	TOP Globoquadrina dehiscens forma spinosa	tFGLOQdefo	17.85	17.85	73.87	75.36
+F	TOP Globoturborotalita nepenthes	tFGLTRnepe	4.371	4.371	106.11	107.6
+F	TOP Globorotalia multicamerata	tFGLOAmult	3.012	3.012	47.21	55.59
+F	TOP Globorotalia margaritae	tFGLOAmarg	3.852	3.852	79.86	82.89
+F	TOP Globorotalia siakensis	tFGLOAsiak	11.039	11.039	298.66	301.52
+F	TOP Globorotalia pertenuis	tFGLOApert	2.611	2.611	173.14	175.11
+F	TOP Globorotalia tosaensis	tFGLOAtosa	0.611	0.611	19.94	25.51
+F	TOP Pulleniatina spectabilis	tFPULLspec	4.212	4.212	104.58	106.11
+F	TOP Pulleniatina primalis	tFPULLprim	3.719	3.719	67.75	69.27
+F	TOP Sphaeroidinellopsis spp.	tFSPHEspp.	3.126	3.126	33.66	35.16
+R	TOP Carpocanopsis cristata s.s	tRCARPcrss			298.0	312.0
+N	TOP Amaurolithus tricorniculatus	tNAMAUtric	3.965	4.799	171.73	174.1
+N	BOT Catinaster calyculus	bNCATIcaly	10.72	10.72	314.55	313.7
+N	BOT Catinaster coalitus	bNCATIcoal	10.801	10.801	314.55	313.7
+N	TOP Catinaster calyculus	tNCATIcaly	9.642	9.642	292.75	294.25
+N	TOP Discoaster asymmetricus	tNDISCasym	2.29	2.29	61.15	61.53
+N	TOP Discoaster bollii	tNDISCboll	9.198	9.198	288.09	290.1
+N	TOP Discoaster hamatus	tNDISChama	9.642	9.642	290.1	291.25
+N	LCO Discoaster exilis	tNDISCexil	9.721	9.721	313.7	321.55
+N	TOP Discoaster brouweri	tNDISCbrou	1.93	1.93	41.25	41.6
+N	BOT Discoaster quinqueramus	bNDISCquin	8.3	8.3	261.45	265.35
+N	TOP Discoaster quinqueramus	tNDISCquin	5.53	5.53	144.66	147.15
+N	BOT Emiliania huxleyi	bNEMILhuxl	0.29	0.29	6.1	9.4
+N	ACME Emiliania huxleyi	aNEMILhuxl	0.781	0.781	6.1	9.4
+N	TOP Discoaster variabilis	tNDISCvari	3.012	3.012	74.2	77.95
+N	BOT Pseudoemiliania lacunosa	bNPSEUlacu	3.596	3.596	80.5	83.15
+N	BOT Gephyrocapsa oceanica	bNGEPHocea	1.793	1.793	43.1	44.2
+N	TOP Pseudoemiliania lacunosa	tNPSEUlacu	0.43	0.43	9.4	15.2
+N	TOP Sphenolithus heteromorphus	tNSPHNhete	13.53	13.53	360.5	364.7
+N	TOP Reticulofenestra pseudoumbilicus	tNRETIpseu	3.82	3.82	101.68	103.18
+N	TOP Sphenolithus abies/neoabies	tNSPHNabie	3.682	3.682	64.25	63.1
+N	TOP Triquetrorhabdulus rugosus	tNTRIQrugo	5.23	5.23	240.55	241.5
+R	EVOL Stichocorys delmontensis -> S. peregrina	eRSTIOpere	6.89	6.89	202.0	204.0
+R	BOT Acrobotrys tritubus	bRACROtrit	8.343	8.343	256.0	259.0
+R	BOT Didymocyrtis antepenultima	bRDIDYante	9.854	9.854	290.0	298.0
+R	BOT Didymocyrtis laticonus	bRDIDYlati	8.343	8.343	358.0	396.0
+R	BOT Didymocyrtis penultima	bRDIDYpenu	8.771	8.771	225.0	227.0
+R	BOT Diartus hughesi	bRDIARhugh	9.094	9.094	280.0	283.0
+R	EVOL Dorcadospyris dentata -> D. alata	eDORCde>al	14.978	14.978	350.0	396.0
+R	BOT Liriospyris parkerae	bRLIRIpark	16.003	16.003	385.0	396.0
+R	BOT Pterocanium prismatium	bRPTERpris	5.414	5.414	123.0	126.0
+R	BOT Phormostichoartus doliolum	bRPHOOdoli	12.006	12.006	350.0	399.0
+R	BOT Lithopera neotera	bRLITXneot	14.454	14.454	346.0	350.0
+R	BOT Solenosphaera omnitubus	bRSOLEomni	7.344	7.344	223.0	227.0
+R	BOT Spongaster berminghami	bRSPONberm	8.664	8.664	270.0	278.0
+R	TOP Acrobotrys tritubus	tRACROtrit	5.964	5.964	167.0	172.0
+R	TOP Calocycletta virginis	tRCALCvirg	14.454	14.454	350.0	396.0
+R	TOP Calocycletta costata	tRCALCcost	14.72	14.72	350.0	396.0
+R	TOP Cyrtocapsella cornuta	tRCYRCcorn	12.084	12.084	327.0	328.0
+R	TOP Cyrtocapsella tetrapera	tRCYRCtetr	12.303	12.303	350.0	404.0
+R	TOP Diartus hughesi	tRDIARhugh	7.74	7.74	232.0	234.0
+R	TOP Didymocyrtis penultima	tRDIDYpenu	4.19	4.19	123.0	126.0
+R	TOP Didymocyrtis violina	tRDIDYviol	15.05	15.05	358.0	396.0
+R	TOP Dorcadospyris dentata	tRDORCdent	15.186	15.186	350.0	396.0
+R	TOP Lithopera neotera	tRLITXneot	9.636	9.636	303.0	324.0
+R	TOP Phormostichoartus doliolum	tRPHOOdoli	3.87	3.87	188.0	209.0
+R	TOP Pterocanium prismatium	tRPTERpris	1.75	1.75	95.0	96.0
+R	TOP Spongaster pentas	tRSPONpent	3.475	3.475	86.0	93.0
+R	TOP Solenosphaera omnitubus	tRSOLEomni	5.152	5.152	154.0	158.0
+R	TOP Siphostichartus corona	tRSIPScoro	5.689	5.689	172.0	209.0
+R	TOP Stichocorys peregrina	tRSTIOpere	2.74	2.74	83.0	93.0
+R	TOP Stichocorys wolffii	tRSTIOwolf	8.986	8.986	346.0	396.0
+F	BOT Globorotalia pertenuis	bFGLOApert	3.475	3.475	182.23	186.32
+F	TOP Globigerinoides obliquus extremus	tFGLODobex	1.884	1.884	63.06	63.26
+F	BOT Pulleniatina spectabilis	bFPULLspec	5.827	5.827	168.64	170.14
+F	TOP Globorotalia fohsi lobata	tFGLOAfolo	12.006	12.006	339.06	340.56
+F	BOT Sphaeroidinella dehiscens	bFSPHAdehi	3.126	3.126	93.85	95.2
+N	BOT Amaurolithus tricorniculatus	bNAMAUtric	6.843	6.843	251.7	256.1
+N	BOT Discoaster kugleri	bNDISCkugl	12.535	12.535	332.71	333.21
+N	BOT Discoaster asymmetricus	bNDISCasym	4.493	4.493	101.68	103.18
+F	BOT Pulleniatina finalis	bFPULLfina	1.404	1.404	42.71	44.21
+N	TOP Discoaster surculus	tNDISCsurc	2.53	2.53	66.08	66.35
+N	BOT Triquetrorhabdulus rugosus	bNTRIQrugo	14.002	14.002	357.5	359.0
+N	TOP Discoaster pentaradiatus	tNDISCpent	2.39	2.39	61.15	61.53
+F	BOT Neogloboquadrina humerosa	bFNEOGhume	8.343	8.343	173.14	175.11
+N	BOT Ceratolithus rugosus	bNCEROrugo	5.08	5.08	125.62	126.02
+F	TOP Globoquadrina altispira	tFGLOQalti	3.012	3.012	71.7	73.87
