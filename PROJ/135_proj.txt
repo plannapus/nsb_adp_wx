@@ -1,0 +1,39 @@
+135	v0.5	2020-06-04	nsb_adp.py Program	Projected Ages
+fossil_group	datum_type	datum_name	plot_code	plot_depth	plot_age	proj_age	proj_age_extension
+F	BOT	Globoquadrina dehiscens	bFGLOQdehi	298.4	22.405	24.251	1.846
+F	BOT	Globorotalia peripheroacuta	bFGLOAperi	298.4	14.807	24.251	9.444
+F	BOT	Globoturborotalita nepenthes	bFGLTRnepe	217.95	11.675	19.194	7.519
+F	BOT	Neogloboquadrina acostaensis	bFNEOGacos	217.95	9.84	19.194	9.354
+F	TOP	Globoquadrina dehiscens	tFGLOQdehi	174.95	5.964	16.492	10.528
+F	BOT	Globorotalia crassaformis s.s.	bFGLOAcrss	131.35	4.493	13.751	9.258
+F	BOT	Globorotalia miozea	bFGLOAmioz	131.35	16.543	13.751	-2.792
+F	TOP	Globoturborotalita nepenthes	tFGLTRnepe	131.35	4.371	13.751	9.38
+F	BOT	Globorotalia margaritae	bFGLOAmarg	87.95	6.338	11.023	4.685
+F	TOP	Globorotalia miozea	tFGLOBmioz	87.95	15.85	11.023	-4.827
+F	TOP	Globigerinoides obliquus extremus	tFGLODobex	42.6	1.884	1.387	-0.497
+F	BOT	Globorotalia inflata	bFGLOAinfl	42.6	3.126	1.387	-1.739
+F	TOP	Globorotalia margaritae	tFGLOAmarg	42.6	3.852	1.387	-2.465
+F	BOT	Globorotalia truncatulinoides	bFGLOAtrun	42.6	1.967	1.387	-0.58
+F	TOP	Sphaeroidinellopsis seminulina	tFSPHEsemi	42.6	3.157	1.387	-1.77
+N	BOT	Hayesites albiensis	bNHAYSalbi	687.365	112.65		
+N	BOT	Eiffellithus turriseiffelii	bNEIFFturr	559.29	103.13		
+N	TOP	Hayesites albiensis	tNHAYSalbi	559.29	100.84		
+N	TOP	Micrantholithus hoschulzii	tNMICRhosc	559.29	122.25		
+N	TOP	Reticulofenestra abisecta	tNRETIabis	293.05	22.982	23.915	0.933
+N	BOT	Sphenolithus heteromorphus	bNSPHNhete	288.05	17.75	23.6	5.85
+N	TOP	Cyclicargolithus floridanus	tNCYCIflor	217.795	13.268	19.185	5.917
+N	LCO	Discoaster exilis	tNDISCexil	217.795	9.721	19.185	9.464
+N	TOP	Sphenolithus heteromorphus	tNSPHNhete	217.795	13.53	19.185	5.655
+N	BOT	Triquetrorhabdulus rugosus	bNTRIQrugo	217.795	14.002	19.185	5.183
+N	TOP	Triquetrorhabdulus rugosus	tNTRIQrugo	131.07999999999998	5.23	13.734	8.504
+N	BOT	Ceratolithus rugosus	bNCEROrugo	88.15	5.08	11.036	5.956
+N	BOT	Pseudoemiliania lacunosa	bNPSEUlacu	85.55	3.596	10.872	7.276
+N	TOP	Discoaster variabilis	tNDISCvari	80.9	3.012	10.58	7.568
+N	TOP	Calcidiscus macintyrei	tNCALDmaci	42.0	1.6	1.368	-0.232
+N	TOP	Discoaster brouweri	tNDISCbrou	42.0	1.93	1.368	-0.562
+N	TOP	Discoaster pentaradiatus	tNDISCpent	42.0	2.39	1.368	-1.022
+N	TOP	Discoaster surculus	tNDISCsurc	42.0	2.53	1.368	-1.162
+N	BOT	Gephyrocapsa oceanica	bNGEPHocea	42.0	1.793	1.368	-0.425
+N	TOP	Helicosphaera sellii	tNHELCsell	42.0	1.477	1.368	-0.109
+N	TOP	Pseudoemiliania lacunosa	tNPSEUlacu	42.0	0.43	1.368	0.938
+N	TOP	Reticulofenestra pseudoumbilicus	tNRETIpseu	42.0	3.82	1.368	-2.452
